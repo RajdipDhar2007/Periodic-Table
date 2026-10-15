@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Periodic Table</title>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;900&family=Space+Mono:wght@400;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #030712;
+    --bg2: #0a1628;
+    --bg3: #0f1f3d;
+    --border: #1e3a5f;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --accent: #00d4ff;
+    --c-alkali: #ff6b6b;
+    --c-alkaline: #ffa07a;
+    --c-lanthanide: #ffd93d;
+    --c-actinide: #c084fc;
+    --c-transition: #4ade80;
+    --c-post: #06b6d4;
+    --c-metalloid: #f59e0b;
+    --c-nonmetal: #34d399;
+    --c-halogen: #fb923c;
+    --c-noble: #818cf8;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Rajdhani',sans-serif;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  body::before{
+    content:'';
+    position:fixed;
+    inset:0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 20%, rgba(0,212,255,.04) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(99,102,241,.04) 0%, transparent 60%);
+    pointer-events:none;
+    z-index:0;
+  }
+
+  /* ── PAGE VIEWS ───────────────────────────────── */
+  .page{display:none;position:relative;z-index:1}
+  .page.active{display:block}
+
+  /* ── TABLE PAGE ───────────────────────────────── */
+  #page-table{padding:0 0 40px}
+
+  .header{
+    padding:20px 24px 16px;
+    border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg, rgba(10,22,40,.95) 0%, rgba(3,7,18,.8) 100%);
+    position:sticky;top:0;z-index:100;
+    backdrop-filter:blur(12px);
+  }
+  .header-top{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .app-logo{
+    font-family:'Space Mono',monospace;
+    font-size:1.1rem;font-weight:700;
+    color:var(--accent);
+    letter-spacing:2px;
+    text-transform:uppercase;
+    white-space:nowrap;
+  }
+  .app-logo span{color:var(--text3);font-size:.75em}
+  .header-stats{
+    display:flex;gap:16px;margin-left:auto;
+    font-size:.75rem;color:var(--text3);
+    font-family:'Space Mono',monospace;
+  }
+  .stat{display:flex;flex-direction:column;align-items:center}
+  .stat b{color:var(--accent);font-size:1rem}
+
+  .controls{
+    display:flex;gap:8px;margin-top:14px;
+    flex-wrap:wrap;align-items:center;
+  }
+  .search-wrap{
+    display:flex;align-items:center;gap:8px;
+    background:var(--bg2);border:1px solid var(--border);
+    border-radius:8px;padding:6px 12px;
+    flex:1;min-width:160px;max-width:280px;
+  }
+  .search-wrap svg{color:var(--text3);flex-shrink:0}
+  #searchInput{
+    background:none;border:none;outline:none;
+    color:var(--text);font-family:'Rajdhani',sans-serif;
+    font-size:.95rem;width:100%;
+  }
+  #searchInput::placeholder{color:var(--text3)}
+  .filter-btns{
+    display:flex;gap:4px;flex-wrap:wrap;
+  }
+  .filter-btn{
+    padding:5px 10px;border-radius:6px;
+    border:1px solid var(--border);
+    background:transparent;color:var(--text2);
+    font-family:'Rajdhani',sans-serif;
+    font-size:.8rem;font-weight:600;
+    cursor:pointer;transition:all .2s;
+    white-space:nowrap;
+  }
+  .filter-btn:hover,.filter-btn.active{
+    border-color:currentColor;
+    opacity:1;
+  }
+  .filter-btn.active{background:rgba(255,255,255,.08)}
+
+  /* ── PERIODIC TABLE GRID ──────────────────────── */
+  .table-wrap{
+    overflow-x:auto;
+    padding:20px 16px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .table-wrap::-webkit-scrollbar{height:4px}
+  .table-wrap::-webkit-scrollbar-track{background:var(--bg2)}
+  .table-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+  .pt-grid{
+    display:grid;
+    grid-template-columns:repeat(18,56px);
+    grid-template-rows:repeat(10,56px);
+    gap:3px;
+    min-width:calc(18*56px + 17*3px);
+    width:max-content;
+    margin-left:auto;margin-right:auto;
+  }
+
+  .el-cell{
+    grid-column:var(--col);
+    grid-row:var(--row);
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:6px;
+    padding:3px 4px;
+    cursor:pointer;
+    position:relative;
+    background:var(--bg2);
+    transition:transform .15s, box-shadow .15s, border-color .15s, z-index 0s .15s;
+    display:flex;flex-direction:column;
+    overflow:visible;
+  }
+  .el-cell:hover{
+    transform:scale(1.35);
+    border-color:var(--el-color);
+    box-shadow:0 0 14px var(--el-color), 0 4px 20px rgba(0,0,0,.6);
+    z-index:50;
+    transition:transform .15s, box-shadow .15s, border-color .15s, z-index 0s;
+  }
+  .el-cell.dimmed{opacity:.15}
+  .el-cell.highlighted{opacity:1}
+
+  .el-number{font-size:.55rem;color:var(--text3);font-family:'Space Mono',monospace;line-height:1}
+  .el-symbol{
+    font-family:'Exo 2',sans-serif;font-weight:700;
+    font-size:1.15rem;line-height:1;
+    color:var(--el-color,var(--text));
+    margin-top:1px;
+  }
+  .el-name{font-size:.5rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;margin-top:1px}
+  .el-mass{font-size:.48rem;color:var(--text3);font-family:'Space Mono',monospace;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* Tooltip */
+  .el-cell:hover .el-tooltip{display:block}
+  .el-tooltip{
+    display:none;
+    position:absolute;
+    bottom:calc(100% + 8px);
+    left:50%;transform:translateX(-50%);
+    background:var(--bg3);
+    border:1px solid var(--el-color);
+    border-radius:8px;
+    padding:8px 10px;
+    min-width:140px;
+    z-index:200;
+    pointer-events:none;
+    box-shadow:0 8px 24px rgba(0,0,0,.6);
+  }
+  .el-tooltip::after{
+    content:'';
+    position:absolute;top:100%;left:50%;transform:translateX(-50%);
+    border:5px solid transparent;
+    border-top-color:var(--el-color);
+  }
+  .el-tooltip.tt-below{
+    bottom:auto;top:calc(100% + 8px);
+  }
+  .el-tooltip.tt-below::after{
+    top:auto;bottom:100%;
+    border-top-color:transparent;
+    border-bottom-color:var(--el-color);
+  }
+  .el-tooltip.tt-left{
+    left:auto;right:0;transform:none;
+  }
+  .el-tooltip.tt-left::after{
+    left:auto;right:14px;transform:none;
+  }
+  .el-tooltip.tt-right{
+    left:0;transform:none;
+  }
+  .el-tooltip.tt-right::after{
+    left:14px;transform:none;
+  }
+  .tt-title{font-weight:700;font-size:.9rem;color:var(--el-color);margin-bottom:4px}
+  .tt-row{display:flex;justify-content:space-between;gap:12px;font-size:.75rem;color:var(--text2);line-height:1.6}
+  .tt-row span{color:var(--text)}
+
+  /* Placeholder cells (La/Ac markers) */
+  .pt-placeholder{
+    grid-column:var(--col);grid-row:var(--row);
+    display:flex;align-items:center;justify-content:center;
+    font-size:.6rem;color:var(--text3);
+    font-family:'Space Mono',monospace;
+    border:1px dashed rgba(255,255,255,.1);
+    border-radius:4px;
+    background:rgba(255,255,255,.01);
+  }
+
+  /* Separator rows */
+  .pt-separator{
+    grid-column:1/-1;grid-row:var(--row);
+    height:8px;
+  }
+
+  /* Legend */
+  .legend{
+    display:flex;flex-wrap:wrap;gap:8px;justify-content:center;
+    padding:0 20px 8px;
+    margin-top:4px;
+  }
+  .legend-item{
+    display:flex;align-items:center;gap:5px;
+    font-size:.72rem;color:var(--text2);
+  }
+  .legend-dot{
+    width:10px;height:10px;border-radius:2px;
+    background:var(--c);
+    flex-shrink:0;
+  }
+
+  /* ── ELEMENT DETAIL PAGE ──────────────────────── */
+  #page-element{
+    min-height:100vh;
+    display:none;
+    flex-direction:column;
+  }
+  #page-element.active{display:flex}
+
+  .el-header{
+    display:flex;align-items:center;gap:12px;
+    padding:12px 16px;
+    border-bottom:1px solid var(--border);
+    background:rgba(10,22,40,.95);
+    backdrop-filter:blur(12px);
+    position:sticky;top:0;z-index:100;
+    flex-shrink:0;
+  }
+  .back-btn{
+    background:var(--bg2);border:1px solid var(--border);
+    color:var(--text2);border-radius:8px;
+    padding:8px 14px;font-family:'Rajdhani',sans-serif;
+    font-size:.9rem;font-weight:600;cursor:pointer;
+    transition:all .2s;display:flex;align-items:center;gap:6px;
+    white-space:nowrap;
+  }
+  .back-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+  .badge-symbol{
+    font-family:'Exo 2',sans-serif;font-weight:900;
+    font-size:2rem;line-height:1;
+  }
+  .badge-info{flex:1}
+  .badge-name{font-family:'Exo 2',sans-serif;font-weight:700;font-size:1.1rem;line-height:1}
+  .badge-num{font-size:.72rem;color:var(--text3);font-family:'Space Mono',monospace;margin-top:2px}
+
+  .nav-btns{display:flex;gap:6px;margin-left:auto}
+  .nav-btn{
+    background:var(--bg2);border:1px solid var(--border);
+    color:var(--text2);border-radius:8px;
+    padding:8px 12px;font-size:1rem;cursor:pointer;
+    transition:all .2s;
+  }
+  .nav-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+  .nav-btn:disabled{opacity:.25;cursor:not-allowed}
+
+  /* Detail body */
+  .detail-body{
+    display:flex;
+    flex:1;
+    min-height:0;
+  }
+
+  /* Left panel */
+  .left-panel{
+    width:380px;flex-shrink:0;
+    overflow-y:auto;
+    padding:20px;
+    border-right:1px solid var(--border);
+    background:rgba(10,22,40,.5);
+  }
+  .left-panel::-webkit-scrollbar{width:4px}
+  .left-panel::-webkit-scrollbar-thumb{background:var(--border)}
+
+  /* Right panel (3D) */
+  .right-panel{
+    flex:1;
+    position:relative;
+    background:#080f1e;
+    min-height:400px;
+  }
+  #three-canvas{width:100%;height:100%;display:block}
+
+  /* ─── Cards & sections ──────────────── */
+  .section{margin-bottom:20px}
+  .section-title{
+    font-family:'Space Mono',monospace;font-size:.65rem;
+    color:var(--text3);letter-spacing:2px;text-transform:uppercase;
+    margin-bottom:8px;
+  }
+
+  .hero-card{
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:12px;
+    padding:16px;
+    background:var(--bg2);
+    position:relative;overflow:hidden;
+    margin-bottom:20px;
+  }
+  .hero-card::before{
+    content:'';position:absolute;
+    top:-30px;right:-30px;
+    width:120px;height:120px;
+    background:radial-gradient(circle, var(--el-color) 0%, transparent 70%);
+    opacity:.12;
+    border-radius:50%;
+  }
+  .hero-symbol-block{
+    display:inline-flex;flex-direction:column;align-items:center;
+    border:2px solid var(--el-color);
+    border-radius:10px;padding:6px 14px;
+    margin-bottom:10px;
+    box-shadow:0 0 16px var(--el-color-30);
+  }
+  .hero-sym{font-family:'Exo 2',sans-serif;font-weight:900;font-size:2.2rem;line-height:1}
+  .hero-num{font-family:'Space Mono',monospace;font-size:.7rem;color:var(--text3)}
+  .hero-title{font-family:'Exo 2',sans-serif;font-weight:700;font-size:1.3rem;line-height:1;margin-bottom:4px}
+  .hero-cat{
+    display:inline-block;padding:2px 8px;
+    border:1px solid var(--el-color);
+    border-radius:4px;font-size:.72rem;
+    color:var(--el-color);margin-bottom:8px;
+  }
+  .hero-summary{font-size:.83rem;color:var(--text2);line-height:1.6}
+
+  /* Props grid */
+  .props-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:6px;
+  }
+  .prop-card{
+    background:var(--bg2);border:1px solid var(--border);
+    border-radius:8px;padding:8px 10px;
+  }
+  .prop-label{font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+  .prop-value{font-family:'Space Mono',monospace;font-size:.82rem;color:var(--text)}
+  .prop-unit{font-size:.65rem;color:var(--text3);margin-left:2px}
+
+  /* Shells */
+  .shells-display{
+    display:flex;align-items:center;flex-wrap:wrap;gap:6px;
+  }
+  .shell-item{
+    display:flex;flex-direction:column;align-items:center;
+    gap:4px;
+  }
+  .shell-name{font-size:.65rem;color:var(--text3);font-family:'Space Mono',monospace}
+  .shell-electrons{display:flex;flex-wrap:wrap;gap:2px;max-width:60px;justify-content:center}
+  .electron-dot{
+    width:6px;height:6px;border-radius:50%;
+    background:var(--el-color,var(--accent));
+    opacity:.8;
+  }
+  .shell-count{font-size:.7rem;color:var(--el-color,var(--accent));font-weight:600}
+  .shell-arrow{color:var(--text3);font-size:.8rem}
+
+  /* Config badge */
+  .config-badge{
+    background:var(--bg2);border:1px solid var(--border);
+    border-radius:8px;padding:8px 12px;
+    font-family:'Space Mono',monospace;
+    font-size:.78rem;color:var(--accent);
+    word-break:break-all;
+  }
+
+  /* Discovery */
+  .discovery-card{
+    background:var(--bg2);border:1px solid var(--border);
+    border-radius:8px;padding:10px 12px;
+    display:flex;justify-content:space-between;align-items:center;
+    gap:12px;
+  }
+  .disc-name{font-size:.85rem;color:var(--text)}
+  .disc-year{
+    font-family:'Space Mono',monospace;font-size:.82rem;
+    color:var(--el-color,var(--accent));
+    white-space:nowrap;
+  }
+
+  /* Uses */
+  .uses-list{
+    display:flex;flex-wrap:wrap;gap:5px;
+  }
+  .use-tag{
+    padding:3px 8px;background:rgba(255,255,255,.04);
+    border:1px solid var(--border);border-radius:4px;
+    font-size:.72rem;color:var(--text2);
+  }
+
+  /* Fun facts */
+  .facts-list{display:flex;flex-direction:column;gap:6px}
+  .fact-item{
+    padding:7px 10px;
+    background:rgba(255,255,255,.03);
+    border-left:2px solid var(--el-color,var(--accent));
+    border-radius:0 6px 6px 0;
+    font-size:.8rem;color:var(--text2);
+    line-height:1.5;
+  }
+
+  /* ── HUD OVERLAYS ─────────────────────────────── */
+  .hud{
+    position:absolute;
+    pointer-events:none;
+    font-family:'Space Mono',monospace;
+  }
+  .nucleus-hud{
+    top:16px;left:16px;
+    background:rgba(8,15,30,.8);
+    border:1px solid var(--border);
+    border-radius:8px;padding:8px 12px;
+    font-size:.68rem;
+    line-height:1.8;
+    color:var(--text2);
+  }
+  .hud-val{color:var(--el-color,var(--accent))}
+
+  .controls-hint{
+    bottom:16px;right:16px;
+    text-align:right;
+    font-size:.6rem;color:var(--text3);
+    line-height:1.8;
+  }
+
+  .zoom-wrap{
+    bottom:16px;left:16px;
+    display:flex;align-items:center;gap:8px;
+    background:rgba(8,15,30,.7);
+    border:1px solid var(--border);
+    border-radius:6px;padding:6px 10px;
+  }
+  .zoom-label{font-size:.6rem;color:var(--text3)}
+  .zoom-track{
+    width:80px;height:4px;background:var(--border);
+    border-radius:2px;overflow:hidden;
+  }
+  #zoomBar{
+    height:100%;background:var(--el-color,var(--accent));
+    width:50%;border-radius:2px;
+    transition:width .1s;
+  }
+
+  .nucleus-mode-label{
+    top:50%;left:50%;transform:translate(-50%,-50%);
+    background:rgba(8,15,30,.85);
+    border:1px solid var(--el-color,var(--accent));
+    border-radius:8px;padding:6px 14px;
+    font-size:.65rem;letter-spacing:2px;text-transform:uppercase;
+    color:var(--el-color,var(--accent));
+    opacity:0;transition:opacity .3s;
+    text-align:center;
+  }
+  .nucleus-mode-label.visible{opacity:1}
+
+  /* Loading spinner */
+  #three-loader{
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    background:#080f1e;z-index:10;
+    flex-direction:column;gap:12px;
+  }
+  .atom-spin{
+    width:40px;height:40px;
+    border:3px solid var(--border);
+    border-top-color:var(--el-color,var(--accent));
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-text{font-size:.7rem;color:var(--text3);font-family:'Space Mono',monospace}
+
+  /* ── ENTRANCE ANIMATION ───────────────────────── */
+  @keyframes cellPop{from{opacity:0;transform:translateY(12px) scale(.6)}}
+  .el-cell{animation:cellPop .6s cubic-bezier(.2,.9,.3,1.25) backwards;animation-delay:calc(var(--col)*24ms + var(--row)*42ms)}
+  .el-symbol{transition:color .45s}
+  @media(prefers-reduced-motion:reduce){.el-cell{animation:none}}
+
+  /* ── VIEW BAR ─────────────────────────────────── */
+  .view-bar{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;align-items:center}
+  .vb-label{font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:2px;text-transform:uppercase;color:var(--text3)}
+  .temp-wrap{display:flex;align-items:center;gap:10px;font-family:'Space Mono',monospace;font-size:.72rem;color:var(--text2)}
+  .temp-wrap[hidden],.heat-legend[hidden],.legend[hidden],.tt-view[hidden],.modal:not(.show){display:none}
+  #tempSlider{width:min(240px,45vw);accent-color:var(--accent)}
+  #tempVal{color:var(--accent);min-width:128px}
+  .vb-actions{margin-left:auto;display:flex;gap:6px}
+  .action-btn{
+    padding:5px 12px;border-radius:6px;border:1px solid var(--accent);
+    background:rgba(0,212,255,.08);color:var(--accent);
+    font-family:'Rajdhani',sans-serif;font-size:.85rem;font-weight:700;
+    cursor:pointer;transition:all .2s;white-space:nowrap;
+  }
+  .action-btn:hover{background:rgba(0,212,255,.22);box-shadow:0 0 14px rgba(0,212,255,.45);transform:translateY(-1px)}
+  .action-btn.alt{border-color:var(--c-actinide);color:var(--c-actinide);background:rgba(192,132,252,.08)}
+  .action-btn.alt:hover{background:rgba(192,132,252,.22);box-shadow:0 0 14px rgba(192,132,252,.45)}
+
+  .heat-legend{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;
+    font-family:'Space Mono',monospace;font-size:.7rem;color:var(--text2);margin:0 16px 6px}
+  .heat-bar{width:min(380px,55vw);height:10px;border-radius:5px;
+    background:linear-gradient(90deg,#3b82f6,#06b6d4,#4ade80,#ffd93d,#ff6b6b);box-shadow:0 0 12px rgba(6,182,212,.3)}
+  .sw{display:inline-flex;align-items:center;gap:6px}
+  .sw i{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+  /* ── FACT TICKER ──────────────────────────────── */
+  .ticker{max-width:920px;margin:12px auto 4px;padding:10px 16px;border:1px solid var(--border);border-radius:10px;
+    background:linear-gradient(90deg,rgba(0,212,255,.07),transparent);font-size:.95rem;color:var(--text2);
+    cursor:pointer;transition:opacity .35s,border-color .2s;min-height:42px}
+  .ticker:hover{border-color:var(--accent)}
+  .ticker b{color:var(--accent)}
+  .ticker.fade{opacity:0}
+  .kbd-hint{text-align:center;font-family:'Space Mono',monospace;font-size:.65rem;color:var(--text3);padding:6px 16px 0;letter-spacing:.5px}
+  kbd{border:1px solid var(--border);border-bottom-width:2px;border-radius:4px;padding:0 5px;color:var(--text2);background:var(--bg2)}
+
+  /* ── QUIZ ─────────────────────────────────────── */
+  .quiz-bar{display:none;margin-top:12px;padding:10px 14px;border:1px solid var(--c-actinide);border-radius:10px;
+    background:rgba(192,132,252,.08);align-items:center;gap:16px;flex-wrap:wrap}
+  body.quizzing .quiz-bar{display:flex}
+  .quiz-q{flex:1;min-width:240px;font-size:1.05rem}
+  .quiz-q b{color:var(--c-actinide)}
+  .quiz-q.ok{color:var(--c-transition)} .quiz-q.bad{color:var(--c-alkali)}
+  .quiz-meta{font-family:'Space Mono',monospace;font-size:.75rem;color:var(--text2);display:flex;gap:14px;align-items:center}
+  .quiz-meta b{color:var(--text)}
+  body.quizzing .el-name, body.quizzing .el-mass, body.quizzing .el-number{visibility:hidden}
+  body.quizzing .el-tooltip{display:none!important}
+  .el-cell.q-right{transform:scale(1.3);z-index:60;border-color:#4ade80;box-shadow:0 0 22px #4ade80;transition:all .2s}
+  .el-cell.q-wrong{border-color:#ff6b6b;box-shadow:0 0 18px #ff6b6b;animation:shake .4s}
+  @keyframes shake{20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+  .modal{position:fixed;inset:0;background:rgba(3,7,18,.82);backdrop-filter:blur(6px);align-items:center;justify-content:center;z-index:500;padding:16px}
+  .modal.show{display:flex}
+  .modal-card{background:var(--bg2);border:1px solid var(--c-actinide);border-radius:16px;padding:28px 32px;text-align:center;
+    max-width:380px;width:100%;box-shadow:0 0 60px rgba(192,132,252,.25);animation:cellPop .5s backwards}
+  .modal-card h2{font-family:'Exo 2',sans-serif;font-size:1.6rem;color:var(--c-actinide);margin-bottom:4px}
+  .big-score{font-family:'Exo 2',sans-serif;font-weight:900;font-size:3.4rem;color:var(--accent);line-height:1.1}
+  .modal-card p{color:var(--text2);margin:6px 0}
+  .modal-card .action-btn{margin:14px 4px 0}
+  .confetti{position:fixed;top:-12px;width:8px;height:12px;z-index:600;pointer-events:none;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:.9}}
+
+  /* ── MOBILE LAYOUT ────────────────────────────── */
+  @media(max-width:768px){
+    .pt-grid{
+      grid-template-columns:repeat(18,42px);
+      grid-template-rows:repeat(10,42px);
+      gap:2px;
+      min-width:calc(18*42px + 17*2px);
+    }
+    .el-symbol{font-size:.9rem}
+    .el-name{font-size:.4rem}
+    .el-mass{font-size:.38rem}
+    .el-number{font-size:.45rem}
+
+    .detail-body{flex-direction:column}
+    .left-panel{
+      width:100%;border-right:none;
+      border-bottom:1px solid var(--border);
+      max-height:55vh;overflow-y:auto;
+    }
+    .right-panel{
+      min-height:45vh;flex:none;
+      height:45vh;
+    }
+    .el-header .badge-name{font-size:.9rem}
+    .header-stats{display:none}
+    .controls-hint{display:none}
+  }
+
+  @media(max-width:480px){
+    .pt-grid{
+      grid-template-columns:repeat(18,34px);
+      grid-template-rows:repeat(10,34px);
+      gap:1px;
+      min-width:calc(18*34px + 17px);
+    }
+    .el-symbol{font-size:.8rem}
+    .el-name,.el-mass,.el-number{display:none}
+    .left-panel{max-height:50vh}
+    .right-panel{height:50vh}
+  }
+
+  /* Scrollbar global */
+  ::-webkit-scrollbar{width:4px;height:4px}
+  ::-webkit-scrollbar-track{background:var(--bg)}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+  ::-webkit-scrollbar-thumb:hover{background:#2d4a7a}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════ TABLE PAGE -->
+<div id="page-table" class="page active">
+  <div class="header">
+    <div class="header-top">
+      <div class="app-logo">⚗ Periodic Table <span>/ A <strong style="color:#06b6d4">RAJDIP DHAR</strong> Project</span></div>
+      <div class="header-stats">
+        <div class="stat"><b>118</b>Elements</div>
+        <div class="stat"><b>7</b>Periods</div>
+        <div class="stat"><b>18</b>Groups</div>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="search-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="searchInput" placeholder="Search element…" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="filter-btns" id="filterBtns">
+        <button class="filter-btn active" data-cat="all" style="color:var(--text2)">All</button>
+        <button class="filter-btn" data-cat="alkali-metal" style="color:var(--c-alkali)">Alkali</button>
+        <button class="filter-btn" data-cat="alkaline-earth-metal" style="color:var(--c-alkaline)">Alkaline</button>
+        <button class="filter-btn" data-cat="transition-metal" style="color:var(--c-transition)">Transition</button>
+        <button class="filter-btn" data-cat="nonmetal" style="color:var(--c-nonmetal)">Nonmetal</button>
+        <button class="filter-btn" data-cat="noble-gas" style="color:var(--c-noble)">Noble Gas</button>
+        <button class="filter-btn" data-cat="lanthanide" style="color:var(--c-lanthanide)">Lanthanide</button>
+        <button class="filter-btn" data-cat="actinide" style="color:var(--c-actinide)">Actinide</button>
+        <button class="filter-btn" data-cat="metalloid" style="color:var(--c-metalloid)">Metalloid</button>
+        <button class="filter-btn" data-cat="halogen" style="color:var(--c-halogen)">Halogen</button>
+        <button class="filter-btn" data-cat="post-transition-metal" style="color:var(--c-post)">Post-Trans</button>
+      </div>
+    </div>
+    <div class="view-bar">
+      <span class="vb-label">Colour by</span>
+      <div class="filter-btns" id="viewBtns">
+        <button class="filter-btn active" data-view="category">Category</button>
+        <button class="filter-btn" data-view="state">State @ temp</button>
+        <button class="filter-btn" data-view="mass">Mass</button>
+        <button class="filter-btn" data-view="melt">Melting pt</button>
+        <button class="filter-btn" data-view="boil">Boiling pt</button>
+        <button class="filter-btn" data-view="density">Density</button>
+        <button class="filter-btn" data-view="year">Discovered</button>
+      </div>
+      <div class="temp-wrap" id="tempWrap" hidden>
+        <button class="filter-btn" id="heatBtn" title="Animate from 0 K to 6000 K">▶ Heat up</button>
+        <input type="range" id="tempSlider" min="0" max="6000" step="10" value="298" aria-label="Temperature in kelvin">
+        <span id="tempVal">298 K · 25 °C</span>
+      </div>
+      <div class="vb-actions">
+        <button class="action-btn" id="randomBtn" title="Open a random element (R)">🎲 Random</button>
+        <button class="action-btn alt" id="quizBtn" title="Start the 10-round quiz (Q)">🧠 Quiz</button>
+      </div>
+    </div>
+    <div class="quiz-bar" id="quizBar">
+      <div class="quiz-q" id="quizQ"></div>
+      <div class="quiz-meta"><span>Round <b id="qRound">1</b>/<b id="qTotal">10</b></span><span>Score <b id="qScore">0</b></span><span>🔥 <b id="qStreak">0</b></span>
+        <button class="filter-btn" id="quizQuit">Quit</button></div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <div class="pt-grid" id="ptGrid"></div>
+  </div>
+
+  <div class="heat-legend" id="heatLegend" hidden></div>
+  <div class="legend" id="catLegend">
+    <div class="legend-item"><div class="legend-dot" style="--c:var(--c-alkali)"></div>Alkali Metal</div>
+    <div class="legend-item"><div class="legend-dot" style="--c:var(--c-alkaline)"></div>Alkaline Earth</div>
+    <div class="legend-item"><div class="legend-dot" style="--c:var(--c-transition)"></div>Transition Metal</div>
+    <div class="legend-item"><div class="legend-dot" style="--c:var(--c-post)"></div>Post-Transition</div>
+    <div class="legend-item"><div class="legend-dot" style="--c:var(--c-metalloid)"></div>Metalloid</div>
+    <div class="legend-item"><div class="legend-dot" style="--c:var(--c-nonmetal)"></div>Nonmetal</div>
+    <div class="legend-item"><div class="legend-dot" style="--c:var(--c-halogen)"></div>Halogen</div>
+    <div class="legend-item"><div class="legend-dot" style="--c:var(--c-noble)"></div>Noble Gas</div>
+    <div class="legend-item"><div class="legend-dot" style="--c:var(--c-lanthanide)"></div>Lanthanide</div>
+    <div class="legend-item"><div class="legend-dot" style="--c:var(--c-actinide)"></div>Actinide</div>
+  </div>
+  <div class="ticker" id="ticker" title="Click to open this element"></div>
+  <div class="kbd-hint"><kbd>/</kbd> search · <kbd>R</kbd> random · <kbd>Q</kbd> quiz · <kbd>←</kbd> <kbd>→</kbd> browse elements · <kbd>Esc</kbd> back</div>
+</div>
+
+<div class="modal" id="quizEnd"><div class="modal-card">
+  <h2 id="qeTitle">Quiz complete</h2>
+  <div class="big-score" id="qeScore">0</div>
+  <p id="qeLine"></p><p id="qeBest"></p>
+  <button class="action-btn alt" id="qeAgain">Play again</button>
+  <button class="action-btn" id="qeClose">Back to table</button>
+</div></div>
+
+<!-- ══════════════════════════════════════ ELEMENT PAGE -->
+<div id="page-element" class="page">
+  <div class="el-header">
+    <button class="back-btn" id="backBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
+      Table
+    </button>
+    <span class="badge-symbol" id="badgeSymbol"></span>
+    <div class="badge-info">
+      <div class="badge-name" id="badgeName"></div>
+      <div class="badge-num" id="badgeNum"></div>
+    </div>
+    <div class="nav-btns">
+      <button class="nav-btn" id="prevBtn" title="Previous">◀</button>
+      <button class="nav-btn" id="nextBtn" title="Next">▶</button>
+    </div>
+  </div>
+
+  <div class="detail-body">
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+      <!-- Hero -->
+      <div class="hero-card" id="heroCard">
+        <div class="hero-symbol-block" id="heroSymBlock">
+          <div class="hero-sym" id="heroSym"></div>
+          <div class="hero-num" id="heroNumBig"></div>
+        </div>
+        <div class="hero-title" id="heroName"></div>
+        <div class="hero-cat" id="heroCat"></div>
+        <div class="hero-summary" id="heroSummary"></div>
+      </div>
+
+      <!-- Properties -->
+      <div class="section">
+        <div class="section-title">Properties</div>
+        <div class="props-grid" id="propGrid"></div>
+      </div>
+
+      <!-- Electron config -->
+      <div class="section">
+        <div class="section-title">Electron Configuration</div>
+        <div class="config-badge" id="electronConfig"></div>
+      </div>
+
+      <!-- Shells -->
+      <div class="section">
+        <div class="section-title">Electron Shells</div>
+        <div class="shells-display" id="shellsDisplay"></div>
+      </div>
+
+      <!-- Discovery -->
+      <div class="section">
+        <div class="section-title">Discovery</div>
+        <div class="discovery-card">
+          <div class="disc-name" id="discoveredBy"></div>
+          <div class="disc-year" id="discoveryYear"></div>
+        </div>
+      </div>
+
+      <!-- Uses -->
+      <div class="section">
+        <div class="section-title">Common Uses</div>
+        <div class="uses-list" id="usesList"></div>
+      </div>
+
+      <!-- Fun facts -->
+      <div class="section">
+        <div class="section-title">Fun Facts</div>
+        <div class="facts-list" id="funFacts"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL — THREE.JS -->
+    <div class="right-panel" id="rightPanel">
+      <canvas id="three-canvas"></canvas>
+      <div id="three-loader">
+        <div class="atom-spin"></div>
+        <div class="loading-text">Loading 3D model…</div>
+      </div>
+
+      <!-- Nucleus HUD -->
+      <div class="hud nucleus-hud" id="nucleusHud">
+        <div>Protons <span class="hud-val" id="protonCount">—</span></div>
+        <div>Neutrons <span class="hud-val" id="neutronCount">—</span></div>
+        <div>Mass # <span class="hud-val" id="massNumber">—</span></div>
+      </div>
+
+      <!-- Zoom bar -->
+      <div class="hud zoom-wrap">
+        <span class="zoom-label">ZOOM</span>
+        <div class="zoom-track"><div id="zoomBar"></div></div>
+      </div>
+
+      <!-- Controls hint -->
+      <div class="hud controls-hint">
+        Drag to rotate<br>
+        Scroll to zoom<br>
+        Zoom in → nucleus mode
+      </div>
+
+      <!-- Nucleus mode label -->
+      <div class="hud nucleus-mode-label" id="nucleusModeLabel">◉ NUCLEUS MODE</div>
+    </div>
+  </div>
+</div>
+
+<!-- THREE.JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ══════════════════════════════════════════════════════
+//  ELEMENT DATA
+// ══════════════════════════════════════════════════════
+const ELEMENTS = [{"number":1,"symbol":"H","name":"Hydrogen","mass":1.008,"category":"nonmetal","group":1,"period":1,"block":"s","electronConfig":"1s¹","state":"Gas","melt":-259.16,"boil":-252.88,"density":8.988e-05,"discoveredBy":"Henry Cavendish","discoveryYear":1766,"summary":"Hydrogen is the lightest and most abundant chemical element in the universe. It constitutes roughly 75% of all normal matter by mass.","uses":"Rocket fuel, ammonia production, petroleum refining, fuel cells, hydrogen bomb","funFacts":["Most abundant element in the universe","Stars are mostly hydrogen","Can be used as clean fuel — only byproduct is water","Lightest of all elements"],"xpos":1,"ypos":1,"shells":[1],"protons":1,"neutrons":0},{"number":2,"symbol":"He","name":"Helium","mass":4.0026,"category":"noble-gas","group":18,"period":1,"block":"s","electronConfig":"1s²","state":"Gas","melt":-272.2,"boil":-268.93,"density":0.0001664,"discoveredBy":"Pierre Janssen","discoveryYear":1868,"summary":"Helium is a colorless, odorless, tasteless, non-toxic, inert, monatomic gas. It is the first noble gas in the periodic table.","uses":"Balloons, airships, deep-sea diving, MRI cooling, arc welding, party balloons","funFacts":["Second most abundant element in the universe","Discovered in the sun before Earth","Boils at -269°C, coldest boiling point of any element","Can make your voice squeaky"],"xpos":18,"ypos":1,"shells":[2],"protons":2,"neutrons":2},{"number":3,"symbol":"Li","name":"Lithium","mass":6.94,"category":"alkali-metal","group":1,"period":2,"block":"s","electronConfig":"[He] 2s¹","state":"Solid","melt":180.5,"boil":1342,"density":0.534,"discoveredBy":"Johan August Arfwedson","discoveryYear":1817,"summary":"Lithium is a soft, silvery-white alkali metal. It is the lightest metal and the lightest solid element. It readily reacts with water.","uses":"Lithium-ion batteries, psychiatric medication, ceramics, lubricants, nuclear reactors","funFacts":["Lightest solid element","Used in smartphones and electric cars","Burns bright crimson red","Was once used in early sodas (7-Up)"],"xpos":1,"ypos":2,"shells":[2,1],"protons":3,"neutrons":4},{"number":4,"symbol":"Be","name":"Beryllium","mass":9.0122,"category":"alkaline-earth-metal","group":2,"period":2,"block":"s","electronConfig":"[He] 2s²","state":"Solid","melt":1287,"boil":2469,"density":1.85,"discoveredBy":"Louis Nicolas Vauquelin","discoveryYear":1798,"summary":"Beryllium is a hard, grayish metal that is relatively rare in the universe. It is used in alloys and nuclear applications.","uses":"Aerospace alloys, nuclear reactors, X-ray windows, electronics, springs","funFacts":["Very stiff and lightweight","Toxic if inhaled as dust","Transparent to X-rays","Used in James Webb Space Telescope mirrors"],"xpos":2,"ypos":2,"shells":[2,2],"protons":4,"neutrons":5},{"number":5,"symbol":"B","name":"Boron","mass":10.81,"category":"metalloid","group":13,"period":2,"block":"p","electronConfig":"[He] 2s² 2p¹","state":"Solid","melt":2075,"boil":4000,"density":2.34,"discoveredBy":"Joseph Louis Gay-Lussac","discoveryYear":1808,"summary":"Boron is a chemical element with properties midway between carbon and silicon. It is found in borax and is used in many industrial applications.","uses":"Borosilicate glass (Pyrex), detergents, insecticides, semiconductors, nuclear shielding","funFacts":["Essential micronutrient for plants","Borax is a common boron compound","Used in nuclear reactor control rods","One of the rarest elements in the solar system"],"xpos":13,"ypos":2,"shells":[2,3],"protons":5,"neutrons":6},{"number":6,"symbol":"C","name":"Carbon","mass":12.011,"category":"nonmetal","group":14,"period":2,"block":"p","electronConfig":"[He] 2s² 2p²","state":"Solid","melt":3550,"boil":4027,"density":2.267,"discoveredBy":"Ancient","discoveryYear":-3750,"summary":"Carbon is the fourth most abundant element in the universe. It is the basis of all known life on Earth. It forms more compounds than any other element.","uses":"Steel production, diamonds, graphite pencils, carbon fiber, fuels, plastics, DNA","funFacts":["Basis of all life on Earth","Diamond is the hardest natural material","Graphite is one of the softest materials","Carbon dating measures age of ancient objects"],"xpos":14,"ypos":2,"shells":[2,4],"protons":6,"neutrons":6},{"number":7,"symbol":"N","name":"Nitrogen","mass":14.007,"category":"nonmetal","group":15,"period":2,"block":"p","electronConfig":"[He] 2s² 2p³","state":"Gas","melt":-210.1,"boil":-195.79,"density":0.001251,"discoveredBy":"Daniel Rutherford","discoveryYear":1772,"summary":"Nitrogen is a colorless, odorless gas that makes up about 78% of Earth's atmosphere. It is essential for amino acids, proteins, and DNA.","uses":"Fertilizers, explosives, food preservation, liquid nitrogen cooling, electronics manufacturing","funFacts":["78% of Earth's atmosphere","Liquid nitrogen is used to freeze things instantly","Essential for DNA and proteins","Laughing gas (N₂O) is a nitrogen compound"],"xpos":15,"ypos":2,"shells":[2,5],"protons":7,"neutrons":7},{"number":8,"symbol":"O","name":"Oxygen","mass":15.999,"category":"nonmetal","group":16,"period":2,"block":"p","electronConfig":"[He] 2s² 2p⁴","state":"Gas","melt":-218.3,"boil":-182.9,"density":0.001429,"discoveredBy":"Carl Wilhelm Scheele","discoveryYear":1771,"summary":"Oxygen is essential for most forms of life and is the most abundant element in Earth's crust. It makes up 21% of Earth's atmosphere.","uses":"Breathing, medical oxygen, steel manufacturing, water treatment, rocket propellant, combustion","funFacts":["21% of Earth's atmosphere","Third most abundant in the universe","Ozone (O₃) protects Earth from UV","Liquid oxygen is pale blue"],"xpos":16,"ypos":2,"shells":[2,6],"protons":8,"neutrons":8},{"number":9,"symbol":"F","name":"Fluorine","mass":18.998,"category":"halogen","group":17,"period":2,"block":"p","electronConfig":"[He] 2s² 2p⁵","state":"Gas","melt":-219.6,"boil":-188.1,"density":0.001696,"discoveredBy":"Henri Moissan","discoveryYear":1886,"summary":"Fluorine is the most reactive and electronegative of all elements. It is a pale yellow gas and is the lightest halogen.","uses":"Toothpaste (fluoride), Teflon cookware, refrigerants, uranium processing, optical fibers","funFacts":["Most electronegative element","Most reactive nonmetal","Teflon is a fluorine compound","Can corrode glass"],"xpos":17,"ypos":2,"shells":[2,7],"protons":9,"neutrons":10},{"number":10,"symbol":"Ne","name":"Neon","mass":20.18,"category":"noble-gas","group":18,"period":2,"block":"p","electronConfig":"[He] 2s² 2p⁶","state":"Gas","melt":-248.59,"boil":-246.05,"density":0.0008999,"discoveredBy":"William Ramsay","discoveryYear":1898,"summary":"Neon is a noble gas that produces a reddish-orange glow when used in gas-discharge tubes, known as neon lights.","uses":"Neon signs, lasers, cryogenic refrigerants, high-voltage indicators, TV tubes","funFacts":["Glows red-orange in electric tubes","Fifth most abundant element in universe","Name means 'new' in Greek","Neon signs don't always use neon"],"xpos":18,"ypos":2,"shells":[2,8],"protons":10,"neutrons":10},{"number":11,"symbol":"Na","name":"Sodium","mass":22.99,"category":"alkali-metal","group":1,"period":3,"block":"s","electronConfig":"[Ne] 3s¹","state":"Solid","melt":97.79,"boil":883,"density":0.971,"discoveredBy":"Humphry Davy","discoveryYear":1807,"summary":"Sodium is a soft, silvery-white, highly reactive metal. Table salt (NaCl) is its most common compound and is essential for life.","uses":"Table salt, soap, baking soda, street lamps, paper production, chemical manufacturing","funFacts":["Explodes violently with water","Table salt is sodium chloride","Responsible for yellow flame color","Essential electrolyte for nerve function"],"xpos":1,"ypos":3,"shells":[2,8,1],"protons":11,"neutrons":12},{"number":12,"symbol":"Mg","name":"Magnesium","mass":24.305,"category":"alkaline-earth-metal","group":2,"period":3,"block":"s","electronConfig":"[Ne] 3s²","state":"Solid","melt":650,"boil":1090,"density":1.738,"discoveredBy":"Joseph Black","discoveryYear":1755,"summary":"Magnesium is a shiny gray solid that is the eighth most abundant element in Earth's crust and is essential for life.","uses":"Lightweight alloys, fireworks (bright white), flares, antacids, laxatives, chlorophyll","funFacts":["Burns with brilliant white light","Essential to chlorophyll in plants","Used in aerospace alloys","Fourth most common element in Earth"],"xpos":2,"ypos":3,"shells":[2,8,2],"protons":12,"neutrons":12},{"number":13,"symbol":"Al","name":"Aluminium","mass":26.982,"category":"post-transition-metal","group":13,"period":3,"block":"p","electronConfig":"[Ne] 3s² 3p¹","state":"Solid","melt":660.32,"boil":2519,"density":2.698,"discoveredBy":"Hans Christian Oersted","discoveryYear":1825,"summary":"Aluminium is a silvery-white, lightweight metal. It is the most abundant metal and the third most abundant element in Earth's crust.","uses":"Cans, foil, aircraft, cars, construction, electrical wiring, packaging, cooking utensils","funFacts":["Most abundant metal in Earth's crust","100% recyclable","Was once more valuable than gold","Used in the Washington Monument cap"],"xpos":13,"ypos":3,"shells":[2,8,3],"protons":13,"neutrons":14},{"number":14,"symbol":"Si","name":"Silicon","mass":28.085,"category":"metalloid","group":14,"period":3,"block":"p","electronConfig":"[Ne] 3s² 3p²","state":"Solid","melt":1414,"boil":3265,"density":2.329,"discoveredBy":"Jöns Jacob Berzelius","discoveryYear":1824,"summary":"Silicon is the second most abundant element in Earth's crust. It is a semiconductor and the foundation of modern electronics.","uses":"Microchips, solar cells, glass, ceramics, silicones, computer chips, sensors","funFacts":["Second most abundant in Earth's crust","Foundation of modern computing","Silicon Valley named after it","Sand is mostly silicon dioxide"],"xpos":14,"ypos":3,"shells":[2,8,4],"protons":14,"neutrons":14},{"number":15,"symbol":"P","name":"Phosphorus","mass":30.974,"category":"nonmetal","group":15,"period":3,"block":"p","electronConfig":"[Ne] 3s² 3p³","state":"Solid","melt":44.15,"boil":280.5,"density":1.82,"discoveredBy":"Hennig Brand","discoveryYear":1669,"summary":"Phosphorus is a reactive nonmetal that exists in several allotropes. White phosphorus is highly flammable and toxic; red phosphorus is safer.","uses":"Fertilizers, matches, detergents, pesticides, steel production, DNA backbone","funFacts":["First element discovered by a known person","Glows in the dark","Essential to DNA and ATP","White phosphorus is used in weapons"],"xpos":15,"ypos":3,"shells":[2,8,5],"protons":15,"neutrons":16},{"number":16,"symbol":"S","name":"Sulfur","mass":32.06,"category":"nonmetal","group":16,"period":3,"block":"p","electronConfig":"[Ne] 3s² 3p⁴","state":"Solid","melt":115.21,"boil":444.61,"density":2.067,"discoveredBy":"Ancient","discoveryYear":-2000,"summary":"Sulfur is a bright yellow, brittle crystalline solid. It has been known since ancient times and is found near volcanoes and hot springs.","uses":"Sulfuric acid, gunpowder, fertilizers, rubber vulcanization, pharmaceuticals, matches","funFacts":["Smells like rotten eggs (H₂S)","Burns with a blue flame","Found near volcanoes","Essential to amino acids"],"xpos":16,"ypos":3,"shells":[2,8,6],"protons":16,"neutrons":16},{"number":17,"symbol":"Cl","name":"Chlorine","mass":35.45,"category":"halogen","group":17,"period":3,"block":"p","electronConfig":"[Ne] 3s² 3p⁵","state":"Gas","melt":-101.5,"boil":-34.04,"density":0.003214,"discoveredBy":"Carl Wilhelm Scheele","discoveryYear":1774,"summary":"Chlorine is a yellow-green toxic gas. It was the first gas used as a chemical weapon in World War I and is widely used for disinfection.","uses":"Water purification, swimming pools, PVC plastic, bleach, pharmaceuticals, disinfectants","funFacts":["Used as chemical weapon in WWI","Keeps pools clean","Half of all industrial chemicals contain chlorine","Table salt is sodium chloride"],"xpos":17,"ypos":3,"shells":[2,8,7],"protons":17,"neutrons":18},{"number":18,"symbol":"Ar","name":"Argon","mass":39.948,"category":"noble-gas","group":18,"period":3,"block":"p","electronConfig":"[Ne] 3s² 3p⁶","state":"Gas","melt":-189.35,"boil":-185.85,"density":0.001784,"discoveredBy":"Lord Rayleigh","discoveryYear":1894,"summary":"Argon is a noble gas that makes up about 0.93% of Earth's atmosphere. It is used in welding and lighting applications.","uses":"Welding shield gas, incandescent light bulbs, wine preservation, double-paned windows","funFacts":["Third most abundant gas in atmosphere","Completely inert — reacts with nothing","Used to preserve documents","Name means 'lazy' in Greek"],"xpos":18,"ypos":3,"shells":[2,8,8],"protons":18,"neutrons":22},{"number":19,"symbol":"K","name":"Potassium","mass":39.098,"category":"alkali-metal","group":1,"period":4,"block":"s","electronConfig":"[Ar] 4s¹","state":"Solid","melt":63.38,"boil":759,"density":0.862,"discoveredBy":"Humphry Davy","discoveryYear":1807,"summary":"Potassium is a soft, silvery-white metal. It is the seventh most abundant element in Earth's crust and essential for all living organisms.","uses":"Fertilizers, glass, soap, gunpowder, medicine, food (potassium chloride salt substitute)","funFacts":["Bananas are rich in potassium","Symbol K comes from 'Kalium'","Essential for nerve impulses","Explodes violently in water"],"xpos":1,"ypos":4,"shells":[2,8,8,1],"protons":19,"neutrons":20},{"number":20,"symbol":"Ca","name":"Calcium","mass":40.078,"category":"alkaline-earth-metal","group":2,"period":4,"block":"s","electronConfig":"[Ar] 4s²","state":"Solid","melt":842,"boil":1484,"density":1.54,"discoveredBy":"Humphry Davy","discoveryYear":1808,"summary":"Calcium is a reactive alkaline earth metal. It is the fifth most abundant element in Earth's crust and essential for bones and teeth.","uses":"Bones and teeth, cement, plaster, steel, antacids, chalk, marble","funFacts":["Most abundant mineral in human body","Makes up eggshells","Essential for muscle contraction","Limestone and chalk are calcium compounds"],"xpos":2,"ypos":4,"shells":[2,8,8,2],"protons":20,"neutrons":20},{"number":21,"symbol":"Sc","name":"Scandium","mass":44.956,"category":"transition-metal","group":3,"period":4,"block":"d","electronConfig":"[Ar] 3d¹ 4s²","state":"Solid","melt":1541,"boil":2836,"density":2.985,"discoveredBy":"Lars Fredrik Nilson","discoveryYear":1879,"summary":"Scandium is a silvery-white metallic element. It was predicted by Mendeleev and is used in high-performance alloys.","uses":"Aluminum-scandium alloys, sports equipment, aerospace, metal halide lamps","funFacts":["Predicted by Mendeleev before discovery","Used in Russian MIG jets","Lightens aluminum alloys dramatically","Rare despite being number 21"],"xpos":3,"ypos":4,"shells":[2,8,9,2],"protons":21,"neutrons":24},{"number":22,"symbol":"Ti","name":"Titanium","mass":47.867,"category":"transition-metal","group":4,"period":4,"block":"d","electronConfig":"[Ar] 3d² 4s²","state":"Solid","melt":1668,"boil":3287,"density":4.506,"discoveredBy":"William Gregor","discoveryYear":1791,"summary":"Titanium is a strong, lustrous, corrosion-resistant metal with a silver color. It is used in aerospace, medicine, and sports equipment.","uses":"Aircraft, spacecraft, medical implants, sports equipment, jewelry, paint (TiO₂)","funFacts":["As strong as steel but 45% lighter","Biocompatible — body doesn't reject it","White paint is mostly TiO₂","Named after the Titans of Greek mythology"],"xpos":4,"ypos":4,"shells":[2,8,10,2],"protons":22,"neutrons":26},{"number":23,"symbol":"V","name":"Vanadium","mass":50.942,"category":"transition-metal","group":5,"period":4,"block":"d","electronConfig":"[Ar] 3d³ 4s²","state":"Solid","melt":1910,"boil":3407,"density":6.0,"discoveredBy":"Andrés Manuel del Río","discoveryYear":1801,"summary":"Vanadium is a hard, silvery-grey metal. It is used mainly in alloys for steel strengthening applications.","uses":"Steel alloys, vanadium redox batteries, catalysts, aerospace","funFacts":["Strengthens steel significantly","Named after Vanadis (Norse goddess)","Found in some crude oils","Vanadium batteries store solar energy"],"xpos":5,"ypos":4,"shells":[2,8,11,2],"protons":23,"neutrons":28},{"number":24,"symbol":"Cr","name":"Chromium","mass":51.996,"category":"transition-metal","group":6,"period":4,"block":"d","electronConfig":"[Ar] 3d⁵ 4s¹","state":"Solid","melt":1907,"boil":2671,"density":7.15,"discoveredBy":"Louis Nicolas Vauquelin","discoveryYear":1798,"summary":"Chromium is a hard, lustrous, steel-gray metal. It is used to harden steel and make stainless steel, and gives rubies their red color.","uses":"Stainless steel, chrome plating, dyes, pigments, leather tanning","funFacts":["Gives rubies their red color","Hardest transition metal","Stainless steel contains chromium","Chromium deficiency may cause diabetes"],"xpos":6,"ypos":4,"shells":[2,8,13,1],"protons":24,"neutrons":28},{"number":25,"symbol":"Mn","name":"Manganese","mass":54.938,"category":"transition-metal","group":7,"period":4,"block":"d","electronConfig":"[Ar] 3d⁵ 4s²","state":"Solid","melt":1246,"boil":2061,"density":7.21,"discoveredBy":"Johan Gottlieb Gahn","discoveryYear":1774,"summary":"Manganese is a hard, brittle, silvery metal. It is an essential trace mineral and important in steel production.","uses":"Steel alloys, batteries, fertilizers, pigments, water treatment","funFacts":["Manganese nodules cover ocean floors","Essential for brain function","Used in dry cell batteries","Purple color in potassium permanganate"],"xpos":7,"ypos":4,"shells":[2,8,13,2],"protons":25,"neutrons":30},{"number":26,"symbol":"Fe","name":"Iron","mass":55.845,"category":"transition-metal","group":8,"period":4,"block":"d","electronConfig":"[Ar] 3d⁶ 4s²","state":"Solid","melt":1538,"boil":2861,"density":7.874,"discoveredBy":"Ancient","discoveryYear":-3000,"summary":"Iron is the most abundant element on Earth by mass. It is the main component of Earth's core and has been used by humans for thousands of years.","uses":"Steel, construction, tools, magnets, hemoglobin (blood), cast iron cookware","funFacts":["Most abundant element in Earth by mass","Earth's core is mostly iron","Essential for blood (hemoglobin)","The Eiffel Tower is made of iron"],"xpos":8,"ypos":4,"shells":[2,8,14,2],"protons":26,"neutrons":30},{"number":27,"symbol":"Co","name":"Cobalt","mass":58.933,"category":"transition-metal","group":9,"period":4,"block":"d","electronConfig":"[Ar] 3d⁷ 4s²","state":"Solid","melt":1495,"boil":2927,"density":8.9,"discoveredBy":"Georg Brandt","discoveryYear":1735,"summary":"Cobalt is a hard, lustrous, silver-gray metal. It is used in superalloys, magnets, and is essential to vitamin B12.","uses":"Magnets, lithium-ion batteries, superalloys, blue pigment (cobalt blue), vitamin B12","funFacts":["Cobalt blue has been used since ancient times","Essential component of vitamin B12","Used in jet engine alloys","Named from German 'Kobold' (goblin)"],"xpos":9,"ypos":4,"shells":[2,8,15,2],"protons":27,"neutrons":32},{"number":28,"symbol":"Ni","name":"Nickel","mass":58.693,"category":"transition-metal","group":10,"period":4,"block":"d","electronConfig":"[Ar] 3d⁸ 4s²","state":"Solid","melt":1455,"boil":2913,"density":8.908,"discoveredBy":"Axel Fredrik Cronstedt","discoveryYear":1751,"summary":"Nickel is a hard, silvery-white lustrous metal. It is extensively used in alloys and is ferromagnetic at room temperature.","uses":"Stainless steel, coins, plating, rechargeable batteries, magnets, guitar strings","funFacts":["US 5-cent coin is called a 'nickel'","Earth's core contains nickel","Nickel allergies are very common","Used in most rechargeable batteries"],"xpos":10,"ypos":4,"shells":[2,8,16,2],"protons":28,"neutrons":30},{"number":29,"symbol":"Cu","name":"Copper","mass":63.546,"category":"transition-metal","group":11,"period":4,"block":"d","electronConfig":"[Ar] 3d¹⁰ 4s¹","state":"Solid","melt":1084.62,"boil":2562,"density":8.96,"discoveredBy":"Ancient","discoveryYear":-9000,"summary":"Copper is a soft, malleable, and ductile metal with very high thermal and electrical conductivity. It has been used by humans for over 10,000 years.","uses":"Electrical wiring, plumbing, coins, electronics, roofing, cookware, musical instruments","funFacts":["First metal used by humans","Turns green when oxidized (verdigris)","Naturally antimicrobial","Statue of Liberty is copper"],"xpos":11,"ypos":4,"shells":[2,8,18,1],"protons":29,"neutrons":34},{"number":30,"symbol":"Zn","name":"Zinc","mass":65.38,"category":"transition-metal","group":12,"period":4,"block":"d","electronConfig":"[Ar] 3d¹⁰ 4s²","state":"Solid","melt":419.53,"boil":907,"density":7.134,"discoveredBy":"Andreas Sigismund Marggraf","discoveryYear":1746,"summary":"Zinc is a bluish-white lustrous metal. It is the fourth most widely used metal and is essential for immune function.","uses":"Galvanizing steel, batteries, alloys (brass), sunscreen, supplements, paint","funFacts":["Galvanizing prevents rust on steel","Essential for immune system","Pennies are mostly zinc","Second most common trace mineral in humans after iron"],"xpos":12,"ypos":4,"shells":[2,8,18,2],"protons":30,"neutrons":35},{"number":31,"symbol":"Ga","name":"Gallium","mass":69.723,"category":"post-transition-metal","group":13,"period":4,"block":"p","electronConfig":"[Ar] 3d¹⁰ 4s² 4p¹","state":"Solid","melt":29.76,"boil":2204,"density":5.907,"discoveredBy":"Lecoq de Boisbaudran","discoveryYear":1875,"summary":"Gallium is a soft, silvery metal that melts just above room temperature. Predicted by Mendeleev, it confirmed his periodic table.","uses":"Semiconductors (GaAs), LEDs, solar cells, thermometers, mirrors","funFacts":["Melts in your hand (29.8°C)","Predicted by Mendeleev as 'eka-aluminum'","GaAs is used in solar cells","Gallium nitride lights up LEDs"],"xpos":13,"ypos":4,"shells":[2,8,18,3],"protons":31,"neutrons":39},{"number":32,"symbol":"Ge","name":"Germanium","mass":72.63,"category":"metalloid","group":14,"period":4,"block":"p","electronConfig":"[Ar] 3d¹⁰ 4s² 4p²","state":"Solid","melt":938.25,"boil":2833,"density":5.323,"discoveredBy":"Clemens Winkler","discoveryYear":1886,"summary":"Germanium is a lustrous, hard, grayish-white metalloid. It was another element predicted by Mendeleev and was crucial in early transistors.","uses":"Fiber optics, infrared optics, semiconductors, solar cells, night-vision devices","funFacts":["Early transistors were germanium","Predicted by Mendeleev as 'eka-silicon'","Transparent to infrared light","Used in night-vision goggles"],"xpos":14,"ypos":4,"shells":[2,8,18,4],"protons":32,"neutrons":41},{"number":33,"symbol":"As","name":"Arsenic","mass":74.922,"category":"metalloid","group":15,"period":4,"block":"p","electronConfig":"[Ar] 3d¹⁰ 4s² 4p³","state":"Solid","melt":817,"boil":614,"density":5.727,"discoveredBy":"Albertus Magnus","discoveryYear":1250,"summary":"Arsenic is a chemical element that can exist in multiple allotropes. It is a well-known poison and has been used throughout history.","uses":"Wood preservative (CCA), semiconductors, pesticides, LED (GaAs), medicine","funFacts":["Famous historical poison","Groundwater contamination is a global issue","Used in semiconductors (GaAs)","Napoleon may have been poisoned by arsenic"],"xpos":15,"ypos":4,"shells":[2,8,18,5],"protons":33,"neutrons":42},{"number":34,"symbol":"Se","name":"Selenium","mass":78.971,"category":"nonmetal","group":16,"period":4,"block":"p","electronConfig":"[Ar] 3d¹⁰ 4s² 4p⁴","state":"Solid","melt":220.8,"boil":685,"density":4.81,"discoveredBy":"Jöns Jacob Berzelius","discoveryYear":1817,"summary":"Selenium is a nonmetal with properties between sulfur and tellurium. It is essential in small amounts for humans.","uses":"Solar cells, glass manufacturing, electronics, dandruff shampoo, dietary supplement","funFacts":["Essential trace element for humans","Used in anti-dandruff shampoos","Photoconductive — used in early copiers","Named after Selene (Greek moon goddess)"],"xpos":16,"ypos":4,"shells":[2,8,18,6],"protons":34,"neutrons":45},{"number":35,"symbol":"Br","name":"Bromine","mass":79.904,"category":"halogen","group":17,"period":4,"block":"p","electronConfig":"[Ar] 3d¹⁰ 4s² 4p⁵","state":"Liquid","melt":-7.2,"boil":58.8,"density":3.1028,"discoveredBy":"Antoine Jérôme Balard","discoveryYear":1826,"summary":"Bromine is a reddish-brown liquid at room temperature. It is one of only two elements that are liquid at standard conditions.","uses":"Flame retardants, pesticides, pharmaceuticals, photography, water treatment","funFacts":["One of only two liquid elements at room temperature","Corrosive red-brown fumes","Named from Greek 'bromos' (stench)","Once used in leaded gasoline"],"xpos":17,"ypos":4,"shells":[2,8,18,7],"protons":35,"neutrons":45},{"number":36,"symbol":"Kr","name":"Krypton","mass":83.798,"category":"noble-gas","group":18,"period":4,"block":"p","electronConfig":"[Ar] 3d¹⁰ 4s² 4p⁶","state":"Gas","melt":-157.37,"boil":-153.22,"density":0.003733,"discoveredBy":"William Ramsay","discoveryYear":1898,"summary":"Krypton is a noble gas that is used in high-performance light bulbs and lasers. It has a bright white light when excited.","uses":"High-power lasers, flash photography, runway lighting, energy-efficient bulbs","funFacts":["Krypton is Superman's home planet","Used to define the meter (1960-1983)","Emits brilliant white light","Named after Greek for 'hidden'"],"xpos":18,"ypos":4,"shells":[2,8,18,8],"protons":36,"neutrons":48},{"number":37,"symbol":"Rb","name":"Rubidium","mass":85.468,"category":"alkali-metal","group":1,"period":5,"block":"s","electronConfig":"[Kr] 5s¹","state":"Solid","melt":39.31,"boil":688,"density":1.532,"discoveredBy":"Robert Bunsen","discoveryYear":1861,"summary":"Rubidium is a soft, silvery-white metallic element. It ignites spontaneously in air and reacts violently with water.","uses":"Atomic clocks, photovoltaics, vacuum tubes, GPS systems","funFacts":["Discovered with spectroscopy by Bunsen","Used in atomic clocks","Burns with a reddish-violet flame","Ignites spontaneously in air"],"xpos":1,"ypos":5,"shells":[2,8,18,8,1],"protons":37,"neutrons":48},{"number":38,"symbol":"Sr","name":"Strontium","mass":87.62,"category":"alkaline-earth-metal","group":2,"period":5,"block":"s","electronConfig":"[Kr] 5s²","state":"Solid","melt":777,"boil":1382,"density":2.64,"discoveredBy":"Adair Crawford","discoveryYear":1790,"summary":"Strontium is a soft silver-white metal. It produces a brilliant red color when burned and is used in fireworks.","uses":"Red fireworks, flares, color TV tubes, atomic clocks, medical tracer","funFacts":["Creates brilliant red in fireworks","Strontium-90 is a dangerous nuclear fallout product","Named after Strontian, Scotland","Bone-seeking element like calcium"],"xpos":2,"ypos":5,"shells":[2,8,18,8,2],"protons":38,"neutrons":50},{"number":39,"symbol":"Y","name":"Yttrium","mass":88.906,"category":"transition-metal","group":3,"period":5,"block":"d","electronConfig":"[Kr] 4d¹ 5s²","state":"Solid","melt":1526,"boil":3336,"density":4.47,"discoveredBy":"Johan Gadolin","discoveryYear":1794,"summary":"Yttrium is a silvery-metallic transition metal. It is used in LED phosphors and gives red color in old TV screens.","uses":"LED phosphors, laser crystals (YAG), superconductors, cancer treatment","funFacts":["Named after Ytterby village in Sweden","4 elements named after same village","Used in LED phosphors","YAG lasers use yttrium"],"xpos":3,"ypos":5,"shells":[2,8,18,9,2],"protons":39,"neutrons":50},{"number":40,"symbol":"Zr","name":"Zirconium","mass":91.224,"category":"transition-metal","group":4,"period":5,"block":"d","electronConfig":"[Kr] 4d² 5s²","state":"Solid","melt":1855,"boil":4409,"density":6.52,"discoveredBy":"Martin Heinrich Klaproth","discoveryYear":1789,"summary":"Zirconium is a lustrous, corrosion-resistant metal that is used mainly in nuclear reactors and as a gemstone (cubic zirconia).","uses":"Nuclear reactor cladding, cubic zirconia jewelry, ceramics, heat-resistant coatings","funFacts":["Used to clad nuclear fuel rods","Cubic zirconia mimics diamond","Highly resistant to corrosion","Transparent to neutrons"],"xpos":4,"ypos":5,"shells":[2,8,18,10,2],"protons":40,"neutrons":51},{"number":41,"symbol":"Nb","name":"Niobium","mass":92.906,"category":"transition-metal","group":5,"period":5,"block":"d","electronConfig":"[Kr] 4d⁴ 5s¹","state":"Solid","melt":2477,"boil":4744,"density":8.57,"discoveredBy":"Charles Hatchett","discoveryYear":1801,"summary":"Niobium is a soft, gray, ductile transition metal. It is used in superconducting magnets and high-strength steel alloys.","uses":"Superalloys, superconducting magnets, nuclear reactors, coins","funFacts":["Used in MRI superconducting magnets","Makes pipeline steel stronger","Named after Niobe from Greek mythology","Brazil produces 98% of world's supply"],"xpos":5,"ypos":5,"shells":[2,8,18,12,1],"protons":41,"neutrons":52},{"number":42,"symbol":"Mo","name":"Molybdenum","mass":95.95,"category":"transition-metal","group":6,"period":5,"block":"d","electronConfig":"[Kr] 4d⁵ 5s¹","state":"Solid","melt":2623,"boil":4639,"density":10.22,"discoveredBy":"Carl Wilhelm Scheele","discoveryYear":1781,"summary":"Molybdenum is a silvery metal with the sixth-highest melting point of any element. It is essential in nitrogen fixation by bacteria.","uses":"High-strength steel alloys, aircraft, missile parts, lubricants, nuclear reactors","funFacts":["Essential for nitrogen fixation in plants","One of highest melting points","Used in armor-piercing bullets","Named from Greek for 'lead'"],"xpos":6,"ypos":5,"shells":[2,8,18,13,1],"protons":42,"neutrons":54},{"number":43,"symbol":"Tc","name":"Technetium","mass":98,"category":"transition-metal","group":7,"period":5,"block":"d","electronConfig":"[Kr] 4d⁵ 5s²","state":"Solid","melt":2157,"boil":4265,"density":11.0,"discoveredBy":"Emilio Segrè","discoveryYear":1937,"summary":"Technetium was the first element to be artificially produced. All its isotopes are radioactive, and it doesn't occur naturally on Earth.","uses":"Nuclear medicine (Tc-99m for medical imaging), nuclear research","funFacts":["First artificially produced element","No stable isotopes","Tc-99m used in 80% of nuclear medicine scans","Predicted by Mendeleev as 'eka-manganese'"],"xpos":7,"ypos":5,"shells":[2,8,18,13,2],"protons":43,"neutrons":55},{"number":44,"symbol":"Ru","name":"Ruthenium","mass":101.07,"category":"transition-metal","group":8,"period":5,"block":"d","electronConfig":"[Kr] 4d⁷ 5s¹","state":"Solid","melt":2334,"boil":4150,"density":12.37,"discoveredBy":"Karl Ernst Claus","discoveryYear":1844,"summary":"Ruthenium is a rare transition metal belonging to the platinum group. It is used as a hardener for platinum and palladium.","uses":"Hardening platinum/palladium alloys, electronics, catalysts, solar cells","funFacts":["Named after Ruthenia (Latin for Russia)","Rarest platinum group metal","Used in ultra-thin resistors","Can create efficient solar cells"],"xpos":8,"ypos":5,"shells":[2,8,18,15,1],"protons":44,"neutrons":57},{"number":45,"symbol":"Rh","name":"Rhodium","mass":102.91,"category":"transition-metal","group":9,"period":5,"block":"d","electronConfig":"[Kr] 4d⁸ 5s¹","state":"Solid","melt":1964,"boil":3695,"density":12.41,"discoveredBy":"William Hyde Wollaston","discoveryYear":1803,"summary":"Rhodium is one of the rarest and most expensive precious metals. It is used primarily as a catalyst in automotive catalytic converters.","uses":"Catalytic converters, jewelry plating, electrical contacts, optical instruments","funFacts":["Most expensive naturally occurring element","Critical in catalytic converters","Reflects over 80% of light","Rarer than gold or platinum"],"xpos":9,"ypos":5,"shells":[2,8,18,16,1],"protons":45,"neutrons":58},{"number":46,"symbol":"Pd","name":"Palladium","mass":106.42,"category":"transition-metal","group":10,"period":5,"block":"d","electronConfig":"[Kr] 4d¹⁰","state":"Solid","melt":1554.9,"boil":2963,"density":12.023,"discoveredBy":"William Hyde Wollaston","discoveryYear":1803,"summary":"Palladium is a rare silvery-white metal used in catalytic converters and as a catalyst for chemical reactions.","uses":"Catalytic converters, electronics, jewelry (white gold), hydrogen storage, dentistry","funFacts":["Can absorb 900x its volume in hydrogen","Used in most catalytic converters","White gold often contains palladium","Named after asteroid Pallas"],"xpos":10,"ypos":5,"shells":[2,8,18,18],"protons":46,"neutrons":60},{"number":47,"symbol":"Ag","name":"Silver","mass":107.87,"category":"transition-metal","group":11,"period":5,"block":"d","electronConfig":"[Kr] 4d¹⁰ 5s¹","state":"Solid","melt":961.78,"boil":2162,"density":10.49,"discoveredBy":"Ancient","discoveryYear":-3000,"summary":"Silver is a precious metal that has the highest electrical conductivity, thermal conductivity, and reflectivity of any metal.","uses":"Jewelry, coins, photography, mirrors, electronics, antibacterial applications, cutlery","funFacts":["Best electrical conductor of all metals","Naturally antibacterial","Silver bullets in folklore kill werewolves","Used in ancient medicine to prevent infection"],"xpos":11,"ypos":5,"shells":[2,8,18,18,1],"protons":47,"neutrons":61},{"number":48,"symbol":"Cd","name":"Cadmium","mass":112.41,"category":"transition-metal","group":12,"period":5,"block":"d","electronConfig":"[Kr] 4d¹⁰ 5s²","state":"Solid","melt":321.07,"boil":767,"density":8.65,"discoveredBy":"Friedrich Stromeyer","discoveryYear":1817,"summary":"Cadmium is a soft, bluish-white metal. It is toxic and has been regulated due to environmental concerns.","uses":"Ni-Cd batteries, yellow pigments, nuclear reactor control rods, electroplating","funFacts":["Used in yellow and orange pigments","Toxic heavy metal","Ni-Cd batteries contain cadmium","Japan had Itai-itai disease from cadmium pollution"],"xpos":12,"ypos":5,"shells":[2,8,18,18,2],"protons":48,"neutrons":64},{"number":49,"symbol":"In","name":"Indium","mass":114.82,"category":"post-transition-metal","group":13,"period":5,"block":"p","electronConfig":"[Kr] 4d¹⁰ 5s² 5p¹","state":"Solid","melt":156.6,"boil":2072,"density":7.31,"discoveredBy":"Ferdinand Reich","discoveryYear":1863,"summary":"Indium is a soft, silvery-white metal. It is used mainly in the production of transparent conductive films for touch screens.","uses":"ITO for touchscreens, LCD displays, solders, bearings, semiconductors","funFacts":["Your phone touchscreen contains indium","Makes a 'tin cry' when bent","Most produced from zinc mining byproduct","Named from indigo color in spectrum"],"xpos":13,"ypos":5,"shells":[2,8,18,18,3],"protons":49,"neutrons":66},{"number":50,"symbol":"Sn","name":"Tin","mass":118.71,"category":"post-transition-metal","group":14,"period":5,"block":"p","electronConfig":"[Kr] 4d¹⁰ 5s² 5p²","state":"Solid","melt":231.93,"boil":2602,"density":7.265,"discoveredBy":"Ancient","discoveryYear":-3500,"summary":"Tin is a post-transition metal. It is alloyed with copper to form bronze, one of the first alloys made by humans.","uses":"Solder, tin cans (steel coated with tin), bronze, pewter, window glass production","funFacts":["Bronze Age started with tin-copper alloy","Makes a 'tin cry' when bent","White tin transforms to grey tin below 13°C","Symbol Sn from Latin 'stannum'"],"xpos":14,"ypos":5,"shells":[2,8,18,18,4],"protons":50,"neutrons":69},{"number":51,"symbol":"Sb","name":"Antimony","mass":121.76,"category":"metalloid","group":15,"period":5,"block":"p","electronConfig":"[Kr] 4d¹⁰ 5s² 5p³","state":"Solid","melt":630.63,"boil":1587,"density":6.697,"discoveredBy":"Ancient","discoveryYear":-3000,"summary":"Antimony is a lustrous gray metalloid. It has been used since antiquity as eye cosmetic (kohl) and in alloys.","uses":"Flame retardants, batteries, semiconductors, ammunition, eye cosmetics (kohl)","funFacts":["Used as black eye makeup in ancient Egypt","Symbol Sb from Latin 'stibium'","Expands when it solidifies (like water)","Used in lead-acid batteries"],"xpos":15,"ypos":5,"shells":[2,8,18,18,5],"protons":51,"neutrons":71},{"number":52,"symbol":"Te","name":"Tellurium","mass":127.6,"category":"metalloid","group":16,"period":5,"block":"p","electronConfig":"[Kr] 4d¹⁰ 5s² 5p⁴","state":"Solid","melt":449.51,"boil":988,"density":6.24,"discoveredBy":"Franz-Joseph Müller von Reichenstein","discoveryYear":1782,"summary":"Tellurium is a brittle, mildly toxic metalloid. It is used in solar panels and is one of the rarest stable elements on Earth.","uses":"CdTe solar panels, thermoelectric devices, steel alloys, DVD discs","funFacts":["Rarer than platinum","Gives garlic breath when absorbed","Used in thin-film solar cells","Named after Latin 'tellus' (Earth)"],"xpos":16,"ypos":5,"shells":[2,8,18,18,6],"protons":52,"neutrons":76},{"number":53,"symbol":"I","name":"Iodine","mass":126.9,"category":"halogen","group":17,"period":5,"block":"p","electronConfig":"[Kr] 4d¹⁰ 5s² 5p⁵","state":"Solid","melt":113.7,"boil":184.3,"density":4.933,"discoveredBy":"Bernard Courtois","discoveryYear":1811,"summary":"Iodine is a dark gray/purple-black solid. It is essential for thyroid hormone production and is used as an antiseptic.","uses":"Antiseptic (iodine solution), thyroid medicine, salt fortification, photography, dyes","funFacts":["Essential for thyroid hormones","Deficiency causes goiter","Sublimates directly to violet vapor","Found in seaweed and seafood"],"xpos":17,"ypos":5,"shells":[2,8,18,18,7],"protons":53,"neutrons":74},{"number":54,"symbol":"Xe","name":"Xenon","mass":131.29,"category":"noble-gas","group":18,"period":5,"block":"p","electronConfig":"[Kr] 4d¹⁰ 5s² 5p⁶","state":"Gas","melt":-111.8,"boil":-108.1,"density":0.005887,"discoveredBy":"William Ramsay","discoveryYear":1898,"summary":"Xenon is a noble gas that produces a beautiful blue glow when excited. It is used in high-intensity lamps and ion thrusters.","uses":"Xenon headlights, flash lamps, ion propulsion (spacecraft), medical imaging","funFacts":["Used in spacecraft ion thrusters","First noble gas to form compounds","Xenon headlights are extremely bright","Used in nuclear fission detection"],"xpos":18,"ypos":5,"shells":[2,8,18,18,8],"protons":54,"neutrons":77},{"number":55,"symbol":"Cs","name":"Caesium","mass":132.91,"category":"alkali-metal","group":1,"period":6,"block":"s","electronConfig":"[Xe] 6s¹","state":"Solid","melt":28.44,"boil":671,"density":1.873,"discoveredBy":"Robert Bunsen","discoveryYear":1860,"summary":"Caesium is a soft, gold-colored alkali metal. It is used in the world's most accurate atomic clocks.","uses":"Atomic clocks, oil drilling, photoelectric cells, GPS satellites","funFacts":["Used in most accurate atomic clocks","Defines the SI second","Melts near room temperature (28°C)","Reacts explosively with water"],"xpos":1,"ypos":6,"shells":[2,8,18,18,8,1],"protons":55,"neutrons":78},{"number":56,"symbol":"Ba","name":"Barium","mass":137.33,"category":"alkaline-earth-metal","group":2,"period":6,"block":"s","electronConfig":"[Xe] 6s²","state":"Solid","melt":727,"boil":1845,"density":3.51,"discoveredBy":"Humphry Davy","discoveryYear":1808,"summary":"Barium is a soft, silvery alkaline earth metal. It is used as a contrast agent in medical X-ray imaging of the gastrointestinal tract.","uses":"Barium meals (GI X-rays), fireworks (green), vacuum tubes, pigments, oil drilling","funFacts":["Barium 'milkshake' used in X-rays","Creates green color in fireworks","Getters in vacuum tubes use barium","Named after Greek 'barys' (heavy)"],"xpos":2,"ypos":6,"shells":[2,8,18,18,8,2],"protons":56,"neutrons":81},{"number":57,"symbol":"La","name":"Lanthanum","mass":138.91,"category":"lanthanide","group":3,"period":6,"block":"f","electronConfig":"[Xe] 5d¹ 6s²","state":"Solid","melt":920,"boil":3464,"density":6.145,"discoveredBy":"Carl Gustaf Mosander","discoveryYear":1839,"summary":"Lanthanum is a soft, malleable, silvery-white metal that heads the lanthanide series of the periodic table.","uses":"Camera lenses, carbon arc lights, lighter flints, hybrid car batteries, catalysts","funFacts":["Used in high-quality camera lenses","Used in NiMH hybrid car batteries","Name means 'to lie hidden' in Greek","Lighter flints contain lanthanum"],"xpos":4,"ypos":9,"shells":[2,8,18,18,9,2],"protons":57,"neutrons":82},{"number":58,"symbol":"Ce","name":"Cerium","mass":140.12,"category":"lanthanide","group":3,"period":6,"block":"f","electronConfig":"[Xe] 4f¹ 5d¹ 6s²","state":"Solid","melt":798,"boil":3443,"density":6.77,"discoveredBy":"Martin Heinrich Klaproth","discoveryYear":1803,"summary":"Cerium is the most abundant rare earth metal. It is used in catalytic converters and self-cleaning ovens.","uses":"Catalytic converters, self-cleaning ovens, flint lighters, glass polishing","funFacts":["Most abundant rare earth element","Used in catalytic converters","Named after dwarf planet Ceres","Makes self-cleaning oven coatings"],"xpos":5,"ypos":9,"shells":[2,8,18,19,9,2],"protons":58,"neutrons":82},{"number":59,"symbol":"Pr","name":"Praseodymium","mass":140.91,"category":"lanthanide","group":3,"period":6,"block":"f","electronConfig":"[Xe] 4f³ 6s²","state":"Solid","melt":931,"boil":3520,"density":6.773,"discoveredBy":"Carl Auer von Welsbach","discoveryYear":1885,"summary":"Praseodymium is a soft, malleable, silvery metal. It is used in powerful magnets and high-intensity light sources.","uses":"Powerful permanent magnets, aircraft engines, welder's goggles, lighter flints","funFacts":["Name means 'green twin' in Greek","Used in pilot/welder goggles","Part of didymium (glass coloring)","Used in strongest permanent magnets"],"xpos":6,"ypos":9,"shells":[2,8,18,21,8,2],"protons":59,"neutrons":82},{"number":60,"symbol":"Nd","name":"Neodymium","mass":144.24,"category":"lanthanide","group":3,"period":6,"block":"f","electronConfig":"[Xe] 4f⁴ 6s²","state":"Solid","melt":1021,"boil":3074,"density":7.007,"discoveredBy":"Carl Auer von Welsbach","discoveryYear":1885,"summary":"Neodymium is the key element in neodymium magnets, the strongest permanent magnets ever created.","uses":"Powerful NdFeB magnets, hard drives, headphones, wind turbines, electric cars","funFacts":["Used in the world's strongest permanent magnets","Inside every hard drive and speaker","Essential for wind turbines and EVs","Magnets can shatter fingers"],"xpos":7,"ypos":9,"shells":[2,8,18,22,8,2],"protons":60,"neutrons":84},{"number":61,"symbol":"Pm","name":"Promethium","mass":145,"category":"lanthanide","group":3,"period":6,"block":"f","electronConfig":"[Xe] 4f⁵ 6s²","state":"Solid","melt":1042,"boil":3000,"density":7.26,"discoveredBy":"Jacob A. Marinsky","discoveryYear":1945,"summary":"Promethium is the only naturally radioactive lanthanide. All its isotopes are unstable.","uses":"Nuclear batteries, luminous paint (historical), thickness gauges","funFacts":["Only radioactive rare earth element","Doesn't exist naturally on Earth","Named after Prometheus from Greek myth","Glows pale blue in the dark"],"xpos":8,"ypos":9,"shells":[2,8,18,23,8,2],"protons":61,"neutrons":84},{"number":62,"symbol":"Sm","name":"Samarium","mass":150.36,"category":"lanthanide","group":3,"period":6,"block":"f","electronConfig":"[Xe] 4f⁶ 6s²","state":"Solid","melt":1074,"boil":1794,"density":7.52,"discoveredBy":"Lecoq de Boisbaudran","discoveryYear":1879,"summary":"Samarium is a rare earth element used in powerful permanent magnets and as a cancer treatment.","uses":"SmCo magnets, cancer radiotherapy, absorbing neutrons in reactors, headphone magnets","funFacts":["Samarium-cobalt magnets work at high temperatures","Used to treat bone cancer pain","First element named after a person (Samarsky)","Used in older headphone drivers"],"xpos":9,"ypos":9,"shells":[2,8,18,24,8,2],"protons":62,"neutrons":88},{"number":63,"symbol":"Eu","name":"Europium","mass":151.96,"category":"lanthanide","group":3,"period":6,"block":"f","electronConfig":"[Xe] 4f⁷ 6s²","state":"Solid","melt":822,"boil":1529,"density":5.243,"discoveredBy":"Eugène-Anatole Demarçay","discoveryYear":1901,"summary":"Europium is the most reactive rare earth element. It produces red and blue phosphorescence in TV and LED screens.","uses":"Red phosphor in TV/LED screens, euro banknote security features, fluorescent lamps","funFacts":["Makes euro banknotes glow under UV","Responsible for red in old CRT TVs","Named after Europe","Most reactive rare earth metal"],"xpos":10,"ypos":9,"shells":[2,8,18,25,8,2],"protons":63,"neutrons":89},{"number":64,"symbol":"Gd","name":"Gadolinium","mass":157.25,"category":"lanthanide","group":3,"period":6,"block":"f","electronConfig":"[Xe] 4f⁷ 5d¹ 6s²","state":"Solid","melt":1313,"boil":3273,"density":7.9,"discoveredBy":"Jean Charles Galissard de Marignac","discoveryYear":1880,"summary":"Gadolinium is used as an MRI contrast agent and in neutron absorption in nuclear reactors.","uses":"MRI contrast agent, neutron absorber in reactors, magneto-optical devices","funFacts":["Used as MRI contrast agent","Highest neutron absorption of all elements","Has unique magnetic properties near room temp","Named after Johan Gadolin"],"xpos":11,"ypos":9,"shells":[2,8,18,25,9,2],"protons":64,"neutrons":93},{"number":65,"symbol":"Tb","name":"Terbium","mass":158.93,"category":"lanthanide","group":3,"period":6,"block":"f","electronConfig":"[Xe] 4f⁹ 6s²","state":"Solid","melt":1356,"boil":3230,"density":8.23,"discoveredBy":"Carl Gustaf Mosander","discoveryYear":1843,"summary":"Terbium is a silvery-white rare earth metal used in green phosphors for displays and in sonar systems.","uses":"Green phosphors for screens, magnetostrictive alloys (sonar), fuel cells","funFacts":["Produces green color in LED TVs","Used in high-performance sonar","Named after Ytterby, Sweden","One of 4 elements from Ytterby"],"xpos":12,"ypos":9,"shells":[2,8,18,27,8,2],"protons":65,"neutrons":94},{"number":66,"symbol":"Dy","name":"Dysprosium","mass":162.5,"category":"lanthanide","group":3,"period":6,"block":"f","electronConfig":"[Xe] 4f¹⁰ 6s²","state":"Solid","melt":1412,"boil":2567,"density":8.551,"discoveredBy":"Lecoq de Boisbaudran","discoveryYear":1886,"summary":"Dysprosium is used in neodymium magnets to allow them to function at higher temperatures.","uses":"NdFeB magnets enhancement, data storage, nuclear reactors, laser materials","funFacts":["Makes neodymium magnets stronger at high temperatures","Name means 'hard to get' in Greek","Critical for electric vehicle motors","Has highest magnetic strength per atom"],"xpos":13,"ypos":9,"shells":[2,8,18,28,8,2],"protons":66,"neutrons":97},{"number":67,"symbol":"Ho","name":"Holmium","mass":164.93,"category":"lanthanide","group":3,"period":6,"block":"f","electronConfig":"[Xe] 4f¹¹ 6s²","state":"Solid","melt":1474,"boil":2700,"density":8.795,"discoveredBy":"Per Teodor Cleve","discoveryYear":1878,"summary":"Holmium has the highest magnetic moment of any naturally occurring element and is used in magnetic pole pieces.","uses":"Nuclear reactor control rods, magnets, lasers (2µm Ho:YAG), medical treatment","funFacts":["Highest magnetic moment of any element","Ho:YAG lasers used in surgery","Named after Stockholm (Holmia in Latin)","Used to create high magnetic fields"],"xpos":14,"ypos":9,"shells":[2,8,18,29,8,2],"protons":67,"neutrons":98},{"number":68,"symbol":"Er","name":"Erbium","mass":167.26,"category":"lanthanide","group":3,"period":6,"block":"f","electronConfig":"[Xe] 4f¹² 6s²","state":"Solid","melt":1529,"boil":2868,"density":9.066,"discoveredBy":"Carl Gustaf Mosander","discoveryYear":1843,"summary":"Erbium is used as a dopant in optical fiber amplifiers, making long-distance internet communication possible.","uses":"Fiber optic amplifiers (EDFA), lasers, glass coloring (pink), medical lasers","funFacts":["Critical for long-distance fiber optic internet","Gives glass a pink color","Er:YAG laser used in dentistry","Named after Ytterby, Sweden"],"xpos":15,"ypos":9,"shells":[2,8,18,30,8,2],"protons":68,"neutrons":99},{"number":69,"symbol":"Tm","name":"Thulium","mass":168.93,"category":"lanthanide","group":3,"period":6,"block":"f","electronConfig":"[Xe] 4f¹³ 6s²","state":"Solid","melt":1545,"boil":1950,"density":9.321,"discoveredBy":"Per Teodor Cleve","discoveryYear":1879,"summary":"Thulium is the least abundant stable lanthanide. It is used in portable X-ray devices.","uses":"Portable X-ray machines, high-power lasers, atomic clocks, currency security","funFacts":["Rarest stable rare earth element","Used in portable X-ray devices","Named after Thule (mythical far north)","Thulium-170 used in X-ray sources"],"xpos":16,"ypos":9,"shells":[2,8,18,31,8,2],"protons":69,"neutrons":100},{"number":70,"symbol":"Yb","name":"Ytterbium","mass":173.04,"category":"lanthanide","group":3,"period":6,"block":"f","electronConfig":"[Xe] 4f¹⁴ 6s²","state":"Solid","melt":824,"boil":1196,"density":6.965,"discoveredBy":"Jean Charles Galissard de Marignac","discoveryYear":1878,"summary":"Ytterbium is used in atomic clocks and as a dopant in fiber lasers.","uses":"Atomic clocks, fiber lasers, stainless steel improvement, radiation source","funFacts":["Used in most accurate atomic clocks","Named after Ytterby, Sweden","Fourth element named after Ytterby","Yb fiber lasers are very efficient"],"xpos":17,"ypos":9,"shells":[2,8,18,32,8,2],"protons":70,"neutrons":103},{"number":71,"symbol":"Lu","name":"Lutetium","mass":174.97,"category":"lanthanide","group":3,"period":6,"block":"f","electronConfig":"[Xe] 4f¹⁴ 5d¹ 6s²","state":"Solid","melt":1663,"boil":3402,"density":9.84,"discoveredBy":"Georges Urbain","discoveryYear":1907,"summary":"Lutetium is the last and hardest of the lanthanides. It is used in cancer treatment and positron emission tomography.","uses":"PET scan detectors, cancer radiotherapy (Lu-177), catalysts, alloys","funFacts":["Hardest and densest lanthanide","Lu-177 used in cancer treatment","Named after Lutetia (Paris)","Most expensive rare earth element"],"xpos":18,"ypos":9,"shells":[2,8,18,32,9,2],"protons":71,"neutrons":104},{"number":72,"symbol":"Hf","name":"Hafnium","mass":178.49,"category":"transition-metal","group":4,"period":6,"block":"d","electronConfig":"[Xe] 4f¹⁴ 5d² 6s²","state":"Solid","melt":2233,"boil":4603,"density":13.31,"discoveredBy":"Dirk Coster","discoveryYear":1923,"summary":"Hafnium is a lustrous, silvery metal used in nuclear reactor control rods and semiconductor gate oxides.","uses":"Nuclear reactor control rods, semiconductor gate dielectrics (Intel chips), superalloys","funFacts":["Last stable element to be discovered","Used in Intel microprocessors since 2007","Named after Copenhagen (Hafnia in Latin)","Almost identical to zirconium in appearance"],"xpos":4,"ypos":6,"shells":[2,8,18,32,10,2],"protons":72,"neutrons":106},{"number":73,"symbol":"Ta","name":"Tantalum","mass":180.95,"category":"transition-metal","group":5,"period":6,"block":"d","electronConfig":"[Xe] 4f¹⁴ 5d³ 6s²","state":"Solid","melt":3017,"boil":5458,"density":16.69,"discoveredBy":"Anders Gustaf Ekeberg","discoveryYear":1802,"summary":"Tantalum is a hard, blue-gray, lustrous transition metal. It is used in capacitors for electronic devices.","uses":"Capacitors in phones/laptops, surgical implants, high-temperature alloys, carbide tools","funFacts":["In every smartphone capacitor","Completely biocompatible","Conflict mineral from Congo","Named after Tantalus from Greek myth"],"xpos":5,"ypos":6,"shells":[2,8,18,32,11,2],"protons":73,"neutrons":108},{"number":74,"symbol":"W","name":"Tungsten","mass":183.84,"category":"transition-metal","group":6,"period":6,"block":"d","electronConfig":"[Xe] 4f¹⁴ 5d⁴ 6s²","state":"Solid","melt":3422,"boil":5555,"density":19.25,"discoveredBy":"Juan José Elhuyar","discoveryYear":1783,"summary":"Tungsten has the highest melting point and tensile strength of all pure metals. It was used in incandescent light bulb filaments.","uses":"Light bulb filaments, cutting tools, X-ray tubes, armor-piercing ammunition, rocket engines","funFacts":["Highest melting point of any metal (3422°C)","Symbol W from 'Wolfram'","Denser than lead","Hardest pure metal"],"xpos":6,"ypos":6,"shells":[2,8,18,32,12,2],"protons":74,"neutrons":110},{"number":75,"symbol":"Re","name":"Rhenium","mass":186.21,"category":"transition-metal","group":7,"period":6,"block":"d","electronConfig":"[Xe] 4f¹⁴ 5d⁵ 6s²","state":"Solid","melt":3186,"boil":5596,"density":21.02,"discoveredBy":"Masataka Ogawa","discoveryYear":1908,"summary":"Rhenium was one of the last stable elements to be discovered. It has the second highest melting point and is used in superalloys.","uses":"Jet engine turbine blades (with nickel), catalysts, thermocouples, mass spectrometry","funFacts":["Last stable element discovered (1925)","Second highest melting point","Named after the Rhine river","Critical for jet turbine blades"],"xpos":7,"ypos":6,"shells":[2,8,18,32,13,2],"protons":75,"neutrons":111},{"number":76,"symbol":"Os","name":"Osmium","mass":190.23,"category":"transition-metal","group":8,"period":6,"block":"d","electronConfig":"[Xe] 4f¹⁴ 5d⁶ 6s²","state":"Solid","melt":3033,"boil":5012,"density":22.59,"discoveredBy":"Smithson Tennant","discoveryYear":1803,"summary":"Osmium is the densest naturally occurring element. It forms a toxic oxide and has a characteristic unpleasant smell.","uses":"Fountain pen tips, electrical contacts, fingerprint detection, hardening platinum","funFacts":["Densest naturally occurring element","Osmium tetroxide smells terrible and is toxic","Hardest platinum group metal","Named from Greek 'osme' (smell)"],"xpos":8,"ypos":6,"shells":[2,8,18,32,14,2],"protons":76,"neutrons":114},{"number":77,"symbol":"Ir","name":"Iridium","mass":192.22,"category":"transition-metal","group":9,"period":6,"block":"d","electronConfig":"[Xe] 4f¹⁴ 5d⁷ 6s²","state":"Solid","melt":2446,"boil":4428,"density":22.56,"discoveredBy":"Smithson Tennant","discoveryYear":1803,"summary":"Iridium is the most corrosion-resistant metal known. An iridium-rich layer in rock marks the mass extinction 66 million years ago.","uses":"Spark plugs, fountain pen nibs, crucibles for growing crystals, medical implants","funFacts":["Most corrosion-resistant metal","Asteroid impact wiped out dinosaurs (Ir layer)","Used in international kilogram standard","Second densest element after osmium"],"xpos":9,"ypos":6,"shells":[2,8,18,32,15,2],"protons":77,"neutrons":115},{"number":78,"symbol":"Pt","name":"Platinum","mass":195.08,"category":"transition-metal","group":10,"period":6,"block":"d","electronConfig":"[Xe] 4f¹⁴ 5d⁹ 6s¹","state":"Solid","melt":1768.3,"boil":3825,"density":21.45,"discoveredBy":"Antonio de Ulloa","discoveryYear":1735,"summary":"Platinum is a dense, malleable, ductile, highly unreactive precious metal. It is used in jewelry, catalytic converters, and chemistry.","uses":"Jewelry, catalytic converters, laboratory equipment, cancer drugs (cisplatin), dental work","funFacts":["More valuable than gold","Most of world's platinum from one mine in South Africa","Used in cancer chemotherapy (cisplatin)","International prototype kilogram was Pt-Ir alloy"],"xpos":10,"ypos":6,"shells":[2,8,18,32,17,1],"protons":78,"neutrons":117},{"number":79,"symbol":"Au","name":"Gold","mass":196.97,"category":"transition-metal","group":11,"period":6,"block":"d","electronConfig":"[Xe] 4f¹⁴ 5d¹⁰ 6s¹","state":"Solid","melt":1064.18,"boil":2856,"density":19.3,"discoveredBy":"Ancient","discoveryYear":-6000,"summary":"Gold is a bright, slightly reddish-yellow, dense, soft, malleable, and ductile metal. It is one of the least reactive chemical elements.","uses":"Jewelry, currency, electronics (connectors), dentistry, aerospace, medicine","funFacts":["All gold came from neutron star collisions","Edible gold (24K) is safe to eat","Best conductor after silver and copper","Only yellow-colored metal"],"xpos":11,"ypos":6,"shells":[2,8,18,32,18,1],"protons":79,"neutrons":118},{"number":80,"symbol":"Hg","name":"Mercury","mass":200.59,"category":"transition-metal","group":12,"period":6,"block":"d","electronConfig":"[Xe] 4f¹⁴ 5d¹⁰ 6s²","state":"Liquid","melt":-38.83,"boil":356.73,"density":13.534,"discoveredBy":"Ancient","discoveryYear":-1500,"summary":"Mercury is the only metal that is liquid at standard conditions. It is a heavy, silvery toxic metal used in thermometers and fluorescent lights.","uses":"Historical thermometers, fluorescent lights, dental amalgams, scientific instruments","funFacts":["Only liquid metal at room temperature","Symbol Hg from Latin 'hydrargyrum' (water-silver)","Old name was quicksilver","Hat-makers used mercury — hence Mad Hatter"],"xpos":12,"ypos":6,"shells":[2,8,18,32,18,2],"protons":80,"neutrons":121},{"number":81,"symbol":"Tl","name":"Thallium","mass":204.38,"category":"post-transition-metal","group":13,"period":6,"block":"p","electronConfig":"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p¹","state":"Solid","melt":304,"boil":1473,"density":11.85,"discoveredBy":"William Crookes","discoveryYear":1861,"summary":"Thallium is a soft, heavy toxic metal that was once used as a rat poison. It is now used in medical imaging.","uses":"Medical imaging (Tl-201 cardiac stress tests), infrared optics, semiconductors","funFacts":["Famous poison — 'inheritance powder'","Used in cardiac imaging stress tests","Agatha Christie mysteries featured thallium","Discovered via spectroscopy"],"xpos":13,"ypos":6,"shells":[2,8,18,32,18,3],"protons":81,"neutrons":123},{"number":82,"symbol":"Pb","name":"Lead","mass":207.2,"category":"post-transition-metal","group":14,"period":6,"block":"p","electronConfig":"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p²","state":"Solid","melt":327.46,"boil":1749,"density":11.34,"discoveredBy":"Ancient","discoveryYear":-6500,"summary":"Lead is a heavy, soft, malleable metal. It was widely used in plumbing, paint, and gasoline until its toxicity was understood.","uses":"Car batteries, radiation shielding, solder, fishing weights, organ pipes","funFacts":["Romans used it in plumbing (hence 'plumbing')","Symbol Pb from Latin 'plumbum'","Blocks radiation effectively","Lead poisoning may have contributed to Rome's fall"],"xpos":14,"ypos":6,"shells":[2,8,18,32,18,4],"protons":82,"neutrons":125},{"number":83,"symbol":"Bi","name":"Bismuth","mass":208.98,"category":"post-transition-metal","group":15,"period":6,"block":"p","electronConfig":"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p³","state":"Solid","melt":271.3,"boil":1564,"density":9.79,"discoveredBy":"Claude François Geoffroy","discoveryYear":1753,"summary":"Bismuth is a brittle metal that forms beautiful rainbow-colored crystals. It is used in pharmaceuticals and as a lead substitute.","uses":"Pepto-Bismol, cosmetics, fire sprinklers, low-melting alloys, replacement for lead shot","funFacts":["Forms stunning iridescent crystals","Pepto-Bismol contains bismuth","Slightly radioactive but very long half-life","Expands when it solidifies"],"xpos":15,"ypos":6,"shells":[2,8,18,32,18,5],"protons":83,"neutrons":126},{"number":84,"symbol":"Po","name":"Polonium","mass":209,"category":"post-transition-metal","group":16,"period":6,"block":"p","electronConfig":"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁴","state":"Solid","melt":254,"boil":962,"density":9.196,"discoveredBy":"Marie Curie","discoveryYear":1898,"summary":"Polonium is a highly radioactive element discovered by Marie Curie. It is one of the most toxic substances known.","uses":"Antistatic devices, neutron initiators in nuclear weapons, spacecraft heaters","funFacts":["Discovered by Marie Curie","Named after Poland (Curie's homeland)","Used to poison Alexander Litvinenko in 2006","One gram would kill 50 million people"],"xpos":16,"ypos":6,"shells":[2,8,18,32,18,6],"protons":84,"neutrons":125},{"number":85,"symbol":"At","name":"Astatine","mass":210,"category":"halogen","group":17,"period":6,"block":"p","electronConfig":"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁵","state":"Solid","melt":302,"boil":337,"density":7,"discoveredBy":"Dale R. Corson","discoveryYear":1940,"summary":"Astatine is the rarest naturally occurring element on Earth. Only about 30 grams exist on Earth at any given time.","uses":"Cancer radiotherapy (At-211), scientific research only","funFacts":["Rarest naturally occurring element","Only 28 grams on entire Earth","Half-life of most stable isotope is 8.1 hours","Name means 'unstable' in Greek"],"xpos":17,"ypos":6,"shells":[2,8,18,32,18,7],"protons":85,"neutrons":125},{"number":86,"symbol":"Rn","name":"Radon","mass":222,"category":"noble-gas","group":18,"period":6,"block":"p","electronConfig":"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁶","state":"Gas","melt":-71,"boil":-61.7,"density":0.00973,"discoveredBy":"Friedrich Ernst Dorn","discoveryYear":1900,"summary":"Radon is a radioactive noble gas that seeps naturally from the ground. It is the second leading cause of lung cancer after smoking.","uses":"Radon therapy (historical), earthquake prediction research, seismology","funFacts":["Second leading cause of lung cancer","Forms from uranium decay","Seeps into basements from soil","Heaviest noble gas"],"xpos":18,"ypos":6,"shells":[2,8,18,32,18,8],"protons":86,"neutrons":136},{"number":87,"symbol":"Fr","name":"Francium","mass":223,"category":"alkali-metal","group":1,"period":7,"block":"s","electronConfig":"[Rn] 7s¹","state":"Solid","melt":27,"boil":677,"density":1.87,"discoveredBy":"Marguerite Perey","discoveryYear":1939,"summary":"Francium is the most unstable of the naturally occurring elements. At any moment, only about 30 grams exist on Earth.","uses":"Only used in scientific research and atomic structure studies","funFacts":["Most unstable natural element","Discovered by a woman (Marguerite Perey)","Only about 30g on Earth at any time","Named after France"],"xpos":1,"ypos":7,"shells":[2,8,18,32,18,8,1],"protons":87,"neutrons":136},{"number":88,"symbol":"Ra","name":"Radium","mass":226,"category":"alkaline-earth-metal","group":2,"period":7,"block":"s","electronConfig":"[Rn] 7s²","state":"Solid","melt":700,"boil":1737,"density":5.5,"discoveredBy":"Marie Curie","discoveryYear":1898,"summary":"Radium is a radioactive element discovered by Marie and Pierre Curie. It famously glows a faint blue in the dark.","uses":"Historical cancer treatment, radon production, self-luminous watch dials (historical)","funFacts":["Glows pale blue in the dark","Discovered by Marie and Pierre Curie","Radium girls painted watch dials and died of cancer","Marie Curie's notebooks are still too radioactive to handle"],"xpos":2,"ypos":7,"shells":[2,8,18,32,18,8,2],"protons":88,"neutrons":138},{"number":89,"symbol":"Ac","name":"Actinium","mass":227,"category":"actinide","group":3,"period":7,"block":"f","electronConfig":"[Rn] 6d¹ 7s²","state":"Solid","melt":1050,"boil":3200,"density":10.07,"discoveredBy":"André-Louis Debierne","discoveryYear":1899,"summary":"Actinium is a radioactive metal that glows blue in the dark due to the ionization of surrounding air. It heads the actinide series.","uses":"Cancer treatment (Ac-225 for targeted alpha therapy), neutron sources","funFacts":["Glows blue in the dark","Gives name to actinide series","Ac-225 is promising cancer treatment","10 tons of pitchblende yields 0.15mg actinium"],"xpos":4,"ypos":10,"shells":[2,8,18,32,18,9,2],"protons":89,"neutrons":138},{"number":90,"symbol":"Th","name":"Thorium","mass":232.04,"category":"actinide","group":3,"period":7,"block":"f","electronConfig":"[Rn] 6d² 7s²","state":"Solid","melt":1750,"boil":4788,"density":11.72,"discoveredBy":"Jöns Jacob Berzelius","discoveryYear":1829,"summary":"Thorium is a radioactive metal that is more abundant than uranium and is considered a potential nuclear fuel for future reactors.","uses":"Potential nuclear fuel, gas mantles (camping lights), tungsten alloys, high-temperature ceramics","funFacts":["4x more abundant than uranium","Can be used as nuclear fuel","Thorium reactors produce less waste","Named after Thor (Norse god)"],"xpos":5,"ypos":10,"shells":[2,8,18,32,18,10,2],"protons":90,"neutrons":142},{"number":91,"symbol":"Pa","name":"Protactinium","mass":231.04,"category":"actinide","group":3,"period":7,"block":"f","electronConfig":"[Rn] 5f² 6d¹ 7s²","state":"Solid","melt":1568,"boil":4000,"density":15.37,"discoveredBy":"Kasimir Fajans","discoveryYear":1913,"summary":"Protactinium is a dense, silvery metallic element that is highly toxic and radioactive. It is found in trace amounts in uranium ores.","uses":"Scientific research only (too rare and radioactive for practical applications)","funFacts":["Extremely rare and toxic","Decays to actinium","Name means 'parent of actinium'","Only a few grams have ever been isolated"],"xpos":6,"ypos":10,"shells":[2,8,18,32,20,9,2],"protons":91,"neutrons":140},{"number":92,"symbol":"U","name":"Uranium","mass":238.03,"category":"actinide","group":3,"period":7,"block":"f","electronConfig":"[Rn] 5f³ 6d¹ 7s²","state":"Solid","melt":1135,"boil":4131,"density":19.1,"discoveredBy":"Martin Heinrich Klaproth","discoveryYear":1789,"summary":"Uranium is the heaviest naturally occurring element. It is used as nuclear fuel and was the first element used in an atomic bomb.","uses":"Nuclear power plants, nuclear weapons, armor-piercing ammunition, historical yellow glass pigment","funFacts":["Fuels 10% of world's electricity","Used in first atomic bomb","U-235 is fissile, U-238 is not","Named after planet Uranus"],"xpos":7,"ypos":10,"shells":[2,8,18,32,21,9,2],"protons":92,"neutrons":146},{"number":93,"symbol":"Np","name":"Neptunium","mass":237,"category":"actinide","group":3,"period":7,"block":"f","electronConfig":"[Rn] 5f⁴ 6d¹ 7s²","state":"Solid","melt":644,"boil":4000,"density":20.45,"discoveredBy":"Edwin McMillan","discoveryYear":1940,"summary":"Neptunium was the first transuranic element to be synthesized. It is found in trace amounts in uranium ores.","uses":"Neutron detection, production of plutonium-238 for spacecraft RTGs","funFacts":["First element heavier than uranium","Named after planet Neptune","Found in tiny traces in uranium ore","Used to make Pu-238 for spacecraft power"],"xpos":8,"ypos":10,"shells":[2,8,18,32,22,9,2],"protons":93,"neutrons":144},{"number":94,"symbol":"Pu","name":"Plutonium","mass":244,"category":"actinide","group":3,"period":7,"block":"f","electronConfig":"[Rn] 5f⁶ 7s²","state":"Solid","melt":640,"boil":3228,"density":19.816,"discoveredBy":"Glenn T. Seaborg","discoveryYear":1940,"summary":"Plutonium is a radioactive metal used as fuel in nuclear reactors and as the fissile component of nuclear weapons.","uses":"Nuclear weapons, nuclear reactors (MOX fuel), spacecraft RTG (Pu-238)","funFacts":["Powers Voyager and New Horizons spacecraft","Used in Fat Man atomic bomb","Warm to the touch due to radioactive decay","Named after planet Pluto"],"xpos":9,"ypos":10,"shells":[2,8,18,32,24,8,2],"protons":94,"neutrons":150},{"number":95,"symbol":"Am","name":"Americium","mass":243,"category":"actinide","group":3,"period":7,"block":"f","electronConfig":"[Rn] 5f⁷ 7s²","state":"Solid","melt":1176,"boil":2011,"density":12,"discoveredBy":"Glenn T. Seaborg","discoveryYear":1944,"summary":"Americium is a man-made radioactive metal. It is found in every household smoke detector.","uses":"Smoke detectors (Am-241), gamma sources for medical devices, calibration sources","funFacts":["In every smoke detector in your home","Named after the Americas","You can legally own Am-241 (in smoke detectors)","Produced in nuclear reactors"],"xpos":10,"ypos":10,"shells":[2,8,18,32,25,8,2],"protons":95,"neutrons":148},{"number":96,"symbol":"Cm","name":"Curium","mass":247,"category":"actinide","group":3,"period":7,"block":"f","electronConfig":"[Rn] 5f⁷ 6d¹ 7s²","state":"Solid","melt":1345,"boil":3110,"density":13.51,"discoveredBy":"Glenn T. Seaborg","discoveryYear":1944,"summary":"Curium is a transuranic radioactive metal named in honor of Pierre and Marie Curie. It is used in spacecraft instruments.","uses":"Alpha-particle X-ray spectrometer on Mars rovers, nuclear fuel","funFacts":["Named after Marie and Pierre Curie","Mars rovers use curium in their instruments","Glows reddish in the dark","Dangerous — no safe handling outside labs"],"xpos":11,"ypos":10,"shells":[2,8,18,32,25,9,2],"protons":96,"neutrons":151},{"number":97,"symbol":"Bk","name":"Berkelium","mass":247,"category":"actinide","group":3,"period":7,"block":"f","electronConfig":"[Rn] 5f⁹ 7s²","state":"Solid","melt":986,"boil":2627,"density":14.78,"discoveredBy":"Glenn T. Seaborg","discoveryYear":1949,"summary":"Berkelium is a synthetic radioactive element produced in nuclear reactors. It is used to synthesize heavier elements.","uses":"Research only — synthesizing heavier elements (tennessine was made from berkelium)","funFacts":["Named after Berkeley, California","Only micrograms produced per year","Used to make tennessine (element 117)","Less than 1g ever produced in history"],"xpos":12,"ypos":10,"shells":[2,8,18,32,27,8,2],"protons":97,"neutrons":150},{"number":98,"symbol":"Cf","name":"Californium","mass":251,"category":"actinide","group":3,"period":7,"block":"f","electronConfig":"[Rn] 5f¹⁰ 7s²","state":"Solid","melt":900,"boil":1470,"density":15.1,"discoveredBy":"Glenn T. Seaborg","discoveryYear":1950,"summary":"Californium is a powerful neutron emitter. A single microgram can emit 170 million neutrons per minute.","uses":"Neutron moisture gauges, oil well logging, cancer treatment, starting nuclear reactors","funFacts":["Most expensive element ($27M per gram)","Emits 170M neutrons per minute per microgram","Named after California","Used to start nuclear reactors"],"xpos":13,"ypos":10,"shells":[2,8,18,32,28,8,2],"protons":98,"neutrons":153},{"number":99,"symbol":"Es","name":"Einsteinium","mass":252,"category":"actinide","group":3,"period":7,"block":"f","electronConfig":"[Rn] 5f¹¹ 7s²","state":"Solid","melt":860,"boil":996,"density":8.84,"discoveredBy":"Albert Ghiorso","discoveryYear":1952,"summary":"Einsteinium was discovered in the debris of the first hydrogen bomb test. It is named after Albert Einstein.","uses":"Research only — synthesizing heavier elements (mendelevium)","funFacts":["Found in hydrogen bomb test debris (1952)","Named after Albert Einstein","Only produced in nuclear reactors","Less than microgram quantities exist"],"xpos":14,"ypos":10,"shells":[2,8,18,32,29,8,2],"protons":99,"neutrons":153},{"number":100,"symbol":"Fm","name":"Fermium","mass":257,"category":"actinide","group":3,"period":7,"block":"f","electronConfig":"[Rn] 5f¹² 7s²","state":"Solid","melt":1527,"boil":null,"density":null,"discoveredBy":"Albert Ghiorso","discoveryYear":1952,"summary":"Fermium was also discovered in hydrogen bomb test debris. It is named after Enrico Fermi, the architect of the nuclear age.","uses":"Research only — no practical applications","funFacts":["Discovered in hydrogen bomb debris","Named after Enrico Fermi","No stable isotopes","Heaviest element that can be produced in quantity"],"xpos":15,"ypos":10,"shells":[2,8,18,32,30,8,2],"protons":100,"neutrons":157},{"number":101,"symbol":"Md","name":"Mendelevium","mass":258,"category":"actinide","group":3,"period":7,"block":"f","electronConfig":"[Rn] 5f¹³ 7s²","state":"Solid","melt":827,"boil":null,"density":null,"discoveredBy":"Albert Ghiorso","discoveryYear":1955,"summary":"Mendelevium is a synthetic radioactive element named after Dmitri Mendeleev, the father of the periodic table.","uses":"Research only","funFacts":["Named after Dmitri Mendeleev","First element made one atom at a time","Atoms last only a few hours","Made by bombarding einsteinium"],"xpos":16,"ypos":10,"shells":[2,8,18,32,31,8,2],"protons":101,"neutrons":157},{"number":102,"symbol":"No","name":"Nobelium","mass":259,"category":"actinide","group":3,"period":7,"block":"f","electronConfig":"[Rn] 5f¹⁴ 7s²","state":"Solid","melt":827,"boil":null,"density":null,"discoveredBy":"Albert Ghiorso","discoveryYear":1958,"summary":"Nobelium is a synthetic radioactive element named after Alfred Nobel. Its most stable isotope has a half-life of 58 minutes.","uses":"Research only","funFacts":["Named after Alfred Nobel","Most stable isotope lasts 58 minutes","Claimed by three different teams","Made by bombarding curium with carbon"],"xpos":17,"ypos":10,"shells":[2,8,18,32,32,8,2],"protons":102,"neutrons":157},{"number":103,"symbol":"Lr","name":"Lawrencium","mass":266,"category":"actinide","group":3,"period":7,"block":"f","electronConfig":"[Rn] 5f¹⁴ 7s² 7p¹","state":"Solid","melt":1627,"boil":null,"density":null,"discoveredBy":"Albert Ghiorso","discoveryYear":1961,"summary":"Lawrencium is the last actinide and was named after Ernest O. Lawrence, inventor of the cyclotron.","uses":"Research only","funFacts":["Named after Ernest O. Lawrence","Last actinide element","Made in a cyclotron (particle accelerator)","Only a few atoms ever observed"],"xpos":18,"ypos":10,"shells":[2,8,18,32,32,8,3],"protons":103,"neutrons":163},{"number":104,"symbol":"Rf","name":"Rutherfordium","mass":267,"category":"transition-metal","group":4,"period":7,"block":"d","electronConfig":"[Rn] 5f¹⁴ 6d² 7s²","state":"Solid","melt":2100,"boil":5500,"density":23.2,"discoveredBy":"JINR","discoveryYear":1969,"summary":"Rutherfordium is the first transactinide element. Named after Ernest Rutherford.","uses":"Research only","funFacts":["Named after Ernest Rutherford","First transactinide element","Half-life of most stable isotope is 1.3 hours","Made by bombarding californium with carbon"],"xpos":4,"ypos":7,"shells":[2,8,18,32,32,10,2],"protons":104,"neutrons":163},{"number":105,"symbol":"Db","name":"Dubnium","mass":268,"category":"transition-metal","group":5,"period":7,"block":"d","electronConfig":"[Rn] 5f¹⁴ 6d³ 7s²","state":"Solid","melt":null,"boil":null,"density":29.3,"discoveredBy":"JINR","discoveryYear":1970,"summary":"Dubnium is a synthetic radioactive element named after Dubna, Russia.","uses":"Research only","funFacts":["Named after Dubna, Russia","Subject of US-Soviet naming dispute","Most stable isotope lasts 28 hours","Too few atoms to study chemistry"],"xpos":5,"ypos":7,"shells":[2,8,18,32,32,11,2],"protons":105,"neutrons":163},{"number":106,"symbol":"Sg","name":"Seaborgium","mass":269,"category":"transition-metal","group":6,"period":7,"block":"d","electronConfig":"[Rn] 5f¹⁴ 6d⁴ 7s²","state":"Solid","melt":null,"boil":null,"density":35.0,"discoveredBy":"Albert Ghiorso","discoveryYear":1974,"summary":"Seaborgium was named after Glenn T. Seaborg during his lifetime.","uses":"Research only","funFacts":["Named after Glenn Seaborg while alive","Only living person to have element named after them","Atoms last only seconds","Most stable isotope lasts 14 minutes"],"xpos":6,"ypos":7,"shells":[2,8,18,32,32,12,2],"protons":106,"neutrons":163},{"number":107,"symbol":"Bh","name":"Bohrium","mass":270,"category":"transition-metal","group":7,"period":7,"block":"d","electronConfig":"[Rn] 5f¹⁴ 6d⁵ 7s²","state":"Solid","melt":null,"boil":null,"density":37.1,"discoveredBy":"Peter Armbruster","discoveryYear":1981,"summary":"Bohrium is a synthetic element named after Niels Bohr, the father of quantum mechanics.","uses":"Research only","funFacts":["Named after Niels Bohr","Most stable isotope lasts 61 seconds","Only a handful of atoms ever made","Predicted properties follow periodic trends"],"xpos":7,"ypos":7,"shells":[2,8,18,32,32,13,2],"protons":107,"neutrons":163},{"number":108,"symbol":"Hs","name":"Hassium","mass":269,"category":"transition-metal","group":8,"period":7,"block":"d","electronConfig":"[Rn] 5f¹⁴ 6d⁶ 7s²","state":"Solid","melt":null,"boil":null,"density":40.7,"discoveredBy":"Peter Armbruster","discoveryYear":1984,"summary":"Hassium is named after the German state of Hesse.","uses":"Research only","funFacts":["Named after Hesse (Hassia in Latin)","Most stable isotope lasts 16 seconds","Predicted to be densest element","Made by fusing lead with iron"],"xpos":8,"ypos":7,"shells":[2,8,18,32,32,14,2],"protons":108,"neutrons":161},{"number":109,"symbol":"Mt","name":"Meitnerium","mass":278,"category":"transition-metal","group":9,"period":7,"block":"d","electronConfig":"[Rn] 5f¹⁴ 6d⁷ 7s²","state":"Solid","melt":null,"boil":null,"density":37.4,"discoveredBy":"Peter Armbruster","discoveryYear":1982,"summary":"Meitnerium is named after Lise Meitner, physicist who co-discovered nuclear fission.","uses":"Research only","funFacts":["Named after Lise Meitner","Lise Meitner was denied the Nobel Prize","Most stable isotope lasts 7.6 seconds","Fused from bismuth and iron"],"xpos":9,"ypos":7,"shells":[2,8,18,32,32,15,2],"protons":109,"neutrons":169},{"number":110,"symbol":"Ds","name":"Darmstadtium","mass":281,"category":"transition-metal","group":10,"period":7,"block":"d","electronConfig":"[Rn] 5f¹⁴ 6d⁸ 7s²","state":"Solid","melt":null,"boil":null,"density":34.8,"discoveredBy":"Peter Armbruster","discoveryYear":1994,"summary":"Darmstadtium is named after Darmstadt, Germany, where it was synthesized at GSI.","uses":"Research only","funFacts":["Named after Darmstadt, Germany","Most stable isotope lasts 12 seconds","Made by fusing nickel with lead","Predicted properties are well-established"],"xpos":10,"ypos":7,"shells":[2,8,18,32,32,16,2],"protons":110,"neutrons":171},{"number":111,"symbol":"Rg","name":"Roentgenium","mass":282,"category":"transition-metal","group":11,"period":7,"block":"d","electronConfig":"[Rn] 5f¹⁴ 6d¹⁰ 7s¹","state":"Solid","melt":null,"boil":null,"density":28.7,"discoveredBy":"Peter Armbruster","discoveryYear":1994,"summary":"Roentgenium is named after Wilhelm Röntgen, the discoverer of X-rays.","uses":"Research only","funFacts":["Named after Wilhelm Röntgen (X-ray discoverer)","Most stable isotope lasts 26 seconds","Predicted to be gold-like","Made by fusing gold and nickel"],"xpos":11,"ypos":7,"shells":[2,8,18,32,32,17,2],"protons":111,"neutrons":171},{"number":112,"symbol":"Cn","name":"Copernicium","mass":285,"category":"transition-metal","group":12,"period":7,"block":"d","electronConfig":"[Rn] 5f¹⁴ 6d¹⁰ 7s²","state":"Gas","melt":null,"boil":357,"density":23.7,"discoveredBy":"Sigurd Hofmann","discoveryYear":1996,"summary":"Copernicium is named after Nicolaus Copernicus. It may behave more like a noble gas than a metal due to relativistic effects.","uses":"Research only","funFacts":["Named after Nicolaus Copernicus","May be a gas at room temperature","Most stable isotope lasts 29 seconds","Relativistic effects change its chemistry"],"xpos":12,"ypos":7,"shells":[2,8,18,32,32,18,2],"protons":112,"neutrons":173},{"number":113,"symbol":"Nh","name":"Nihonium","mass":286,"category":"post-transition-metal","group":13,"period":7,"block":"p","electronConfig":"[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p¹","state":"Solid","melt":430,"boil":1130,"density":16,"discoveredBy":"RIKEN (Japan)","discoveryYear":2004,"summary":"Nihonium was the first element discovered in Asia, synthesized at RIKEN in Japan.","uses":"Research only","funFacts":["First element discovered in Asia","Named 'Nihon' — Japanese name for Japan","Japan's first element discovery","Most stable isotope lasts 20 seconds"],"xpos":13,"ypos":7,"shells":[2,8,18,32,32,18,3],"protons":113,"neutrons":173},{"number":114,"symbol":"Fl","name":"Flerovium","mass":289,"category":"post-transition-metal","group":14,"period":7,"block":"p","electronConfig":"[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p²","state":"Solid","melt":null,"boil":210,"density":14,"discoveredBy":"JINR","discoveryYear":1998,"summary":"Flerovium is named after Flerov Laboratory where it was synthesized.","uses":"Research only","funFacts":["May be a gas at room temperature","Named after Flerov Laboratory","Most stable isotope lasts 2.1 seconds","Predicted to behave like a noble gas"],"xpos":14,"ypos":7,"shells":[2,8,18,32,32,18,4],"protons":114,"neutrons":175},{"number":115,"symbol":"Mc","name":"Moscovium","mass":290,"category":"post-transition-metal","group":15,"period":7,"block":"p","electronConfig":"[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p³","state":"Solid","melt":400,"boil":1100,"density":13.5,"discoveredBy":"JINR","discoveryYear":2003,"summary":"Moscovium is named after Moscow Oblast, Russia.","uses":"Research only","funFacts":["Named after Moscow Oblast, Russia","Decays to nihonium","Most stable isotope lasts 220 milliseconds","Made from americium and calcium"],"xpos":15,"ypos":7,"shells":[2,8,18,32,32,18,5],"protons":115,"neutrons":175},{"number":116,"symbol":"Lv","name":"Livermorium","mass":293,"category":"post-transition-metal","group":16,"period":7,"block":"p","electronConfig":"[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁴","state":"Solid","melt":364,"boil":762,"density":12.9,"discoveredBy":"JINR","discoveryYear":2000,"summary":"Livermorium is named after Lawrence Livermore National Laboratory in California.","uses":"Research only","funFacts":["Named after Lawrence Livermore Lab","Most stable isotope lasts 61 milliseconds","Decays to flerovium","Joint US-Russian collaboration"],"xpos":16,"ypos":7,"shells":[2,8,18,32,32,18,6],"protons":116,"neutrons":177},{"number":117,"symbol":"Ts","name":"Tennessine","mass":294,"category":"halogen","group":17,"period":7,"block":"p","electronConfig":"[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁵","state":"Solid","melt":350,"boil":610,"density":7.17,"discoveredBy":"JINR","discoveryYear":2010,"summary":"Tennessine is named after Tennessee, USA.","uses":"Research only","funFacts":["Named after Tennessee, USA","Second heaviest known element","Most stable isotope lasts 51 milliseconds","Made from berkelium and calcium"],"xpos":17,"ypos":7,"shells":[2,8,18,32,32,18,7],"protons":117,"neutrons":177},{"number":118,"symbol":"Og","name":"Oganesson","mass":294,"category":"noble-gas","group":18,"period":7,"block":"p","electronConfig":"[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁶","state":"Solid","melt":325,"boil":450,"density":5,"discoveredBy":"JINR","discoveryYear":2002,"summary":"Oganesson is the heaviest known element and the last on the periodic table. Named after Yuri Oganessian.","uses":"Research only","funFacts":["Heaviest known element","Named after Yuri Oganessian (still living)","May be solid at room temperature","Only 5 atoms ever observed","Most stable isotope lasts 0.89 milliseconds"],"xpos":18,"ypos":7,"shells":[2,8,18,32,32,18,8],"protons":118,"neutrons":176}];
+
+// ══════════════════════════════════════════════════════
+//  CATEGORY SYSTEM
+// ══════════════════════════════════════════════════════
+const CAT_COLORS = {
+  'alkali-metal':          '#ff6b6b',
+  'alkaline-earth-metal':  '#ffa07a',
+  'lanthanide':            '#ffd93d',
+  'actinide':              '#c084fc',
+  'transition-metal':      '#4ade80',
+  'post-transition-metal': '#06b6d4',
+  'metalloid':             '#f59e0b',
+  'nonmetal':              '#34d399',
+  'halogen':               '#fb923c',
+  'noble-gas':             '#818cf8'
+};
+const CAT_NAMES = {
+  'alkali-metal':          'Alkali Metal',
+  'alkaline-earth-metal':  'Alkaline Earth Metal',
+  'lanthanide':            'Lanthanide',
+  'actinide':              'Actinide',
+  'transition-metal':      'Transition Metal',
+  'post-transition-metal': 'Post-Transition Metal',
+  'metalloid':             'Metalloid',
+  'nonmetal':              'Nonmetal',
+  'halogen':               'Halogen',
+  'noble-gas':             'Noble Gas'
+};
+
+function catColor(cat) { return CAT_COLORS[cat] || '#4ade80'; }
+
+// ══════════════════════════════════════════════════════
+//  TABLE BUILDER
+// ══════════════════════════════════════════════════════
+function buildTable() {
+  const grid = document.getElementById('ptGrid');
+  grid.innerHTML = '';
+
+  // La/Ac separator row placeholders
+  const laPlaceholder = document.createElement('div');
+  laPlaceholder.className = 'pt-placeholder';
+  laPlaceholder.style.cssText = '--col:3;--row:6';
+  laPlaceholder.textContent = '57–71';
+  grid.appendChild(laPlaceholder);
+
+  const acPlaceholder = document.createElement('div');
+  acPlaceholder.className = 'pt-placeholder';
+  acPlaceholder.style.cssText = '--col:3;--row:7';
+  acPlaceholder.textContent = '89–103';
+  grid.appendChild(acPlaceholder);
+
+  ELEMENTS.forEach(el => {
+    const color = catColor(el.category);
+    const cell = document.createElement('div');
+    cell.className = 'el-cell';
+    cell.dataset.number = el.number;
+    cell.dataset.category = el.category;
+    cell.style.cssText = `--col:${el.xpos};--row:${el.ypos};--el-color:${color}`;
+
+    cell.innerHTML = `
+      <div class="el-number">${el.number}</div>
+      <div class="el-symbol">${el.symbol}</div>
+      <div class="el-name">${el.name}</div>
+      <div class="el-mass">${typeof el.mass === 'number' ? el.mass.toFixed(el.mass < 10 ? 3 : el.mass < 100 ? 2 : 1) : el.mass}</div>
+      <div class="el-tooltip">
+        <div class="tt-title">${el.name} (${el.symbol})</div>
+        <div class="tt-row">Category <span>${CAT_NAMES[el.category]||el.category}</span></div>
+        <div class="tt-row">Group / Period <span>${el.group||'—'} / ${el.period}</span></div>
+        <div class="tt-row">Block <span>${el.block?.toUpperCase()||'—'}</span></div>
+        <div class="tt-row">State <span>${el.state||'—'}</span></div>
+        <div class="tt-row tt-view" hidden></div>
+      </div>
+    `;
+    cell.dataset.massText = cell.querySelector('.el-mass').textContent;
+    cell.addEventListener('click', () => onCellClick(el));
+    cell.addEventListener('mouseenter', () => positionTooltip(cell));
+    grid.appendChild(cell);
+  });
+}
+
+function positionTooltip(cell) {
+  const tip = cell.querySelector('.el-tooltip');
+  if (!tip) return;
+  tip.classList.remove('tt-below','tt-left','tt-right');
+
+  // Use the cell's center (invariant under the center-origin hover scale)
+  // plus the known final scaled size, so this doesn't depend on whether
+  // the hover transform has finished transitioning yet.
+  const rawRect = cell.getBoundingClientRect();
+  const cx = rawRect.left + rawRect.width/2;
+  const cy = rawRect.top + rawRect.height/2;
+  const scaledSize = 56 * 1.35;
+  const cellTop = cy - scaledSize/2;
+  const cellLeft = cx - scaledSize/2;
+  const cellRight = cx + scaledSize/2;
+
+  const header = document.querySelector('.header');
+  const headerBottom = header ? header.getBoundingClientRect().bottom : 0;
+
+  tip.style.visibility = 'hidden';
+  tip.style.display = 'block';
+  const tipRect = tip.getBoundingClientRect();
+  tip.style.display = '';
+  tip.style.visibility = '';
+
+  const cat = cell.dataset.category;
+  const isLanAct = cat === 'lanthanide' || cat === 'actinide';
+  if (!isLanAct) {
+    tip.classList.add('tt-below');
+  }
+  if (cx - tipRect.width/2 < 4) {
+    tip.classList.add('tt-right');
+  } else if (cx + tipRect.width/2 > window.innerWidth - 4) {
+    tip.classList.add('tt-left');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  SEARCH & FILTER
+// ══════════════════════════════════════════════════════
+let activeFilter = 'all';
+
+function applyFilter(cat) {
+  activeFilter = cat;
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.cat === cat);
+  });
+  applyHighlight();
+}
+
+function applyHighlight() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  document.querySelectorAll('.el-cell').forEach(cell => {
+    const num = parseInt(cell.dataset.number);
+    const el = ELEMENTS.find(e => e.number === num);
+    if (!el) return;
+
+    const catOk = activeFilter === 'all' || el.category === activeFilter;
+    const searchOk = !q || el.name.toLowerCase().includes(q) ||
+                     el.symbol.toLowerCase().includes(q) ||
+                     String(el.number).includes(q);
+
+    if (catOk && searchOk) {
+      cell.classList.remove('dimmed');
+      cell.classList.toggle('highlighted', !!(q || activeFilter !== 'all'));
+    } else {
+      cell.classList.add('dimmed');
+      cell.classList.remove('highlighted');
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════
+//  ROUTING (Hash-based)
+// ══════════════════════════════════════════════════════
+let currentNumber = 1;
+let threeInited = false;
+let threeRAF = null;
+
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+}
+
+function navigateTo(num) {
+  num = Math.max(1, Math.min(118, num));
+  window.location.hash = `#element/${num}`;
+}
+
+function handleHash() {
+  const hash = window.location.hash;
+  if (hash.startsWith('#element/')) {
+    const num = parseInt(hash.replace('#element/', ''));
+    if (num >= 1 && num <= 118) {
+      currentNumber = num;
+      stopQuiz();
+      loadElement(num);
+      showPage('page-element');
+    }
+  } else {
+    showPage('page-table');
+    // Stop Three.js when going back to table
+    if (threeRAF) { cancelAnimationFrame(threeRAF); threeRAF = null; }
+  }
+}
+
+window.addEventListener('hashchange', handleHash);
+
+// ══════════════════════════════════════════════════════
+//  ELEMENT INFO
+// ══════════════════════════════════════════════════════
+function loadElement(num) {
+  const el = ELEMENTS.find(e => e.number === num);
+  if (!el) return;
+
+  const color = catColor(el.category);
+  document.title = `${el.name} (${el.symbol}) A RAJDIP DHAR PROJECT`;
+
+  // Set CSS color var on page
+  document.documentElement.style.setProperty('--el-color', color);
+  document.documentElement.style.setProperty('--el-color-30', color + '30');
+
+  // Header
+  document.getElementById('badgeSymbol').textContent = el.symbol;
+  document.getElementById('badgeSymbol').style.color = color;
+  document.getElementById('badgeName').textContent = el.name;
+  document.getElementById('badgeName').style.color = color;
+  document.getElementById('badgeNum').textContent = `ATOMIC NUMBER: ${el.number}`;
+
+  // Prev/Next
+  document.getElementById('prevBtn').disabled = num <= 1;
+  document.getElementById('nextBtn').disabled = num >= 118;
+
+  // Hero
+  document.getElementById('heroSym').textContent = el.symbol;
+  document.getElementById('heroSym').style.color = color;
+  document.getElementById('heroNumBig').textContent = `#${el.number}`;
+  document.getElementById('heroSymBlock').style.borderColor = color;
+  document.getElementById('heroSymBlock').style.boxShadow = `0 0 20px ${color}44`;
+  document.getElementById('heroName').textContent = el.name;
+  document.getElementById('heroName').style.color = color;
+  document.getElementById('heroCat').textContent = CAT_NAMES[el.category] || el.category;
+  document.getElementById('heroCat').style.borderColor = color;
+  document.getElementById('heroCat').style.color = color;
+  document.getElementById('heroSummary').textContent = el.summary || '';
+  document.getElementById('heroCard').style.setProperty('--el-color', color);
+
+  // Props
+  const props = [
+    { label: 'Atomic Number', value: el.number,  unit: '' },
+    { label: 'Atomic Mass',   value: el.mass,     unit: 'u' },
+    { label: 'State (RT)',    value: el.state||'—', unit: '' },
+    { label: 'Group',         value: el.group||'—', unit: '' },
+    { label: 'Period',        value: el.period||'—', unit: '' },
+    { label: 'Block',         value: el.block ? el.block.toUpperCase() : '—', unit: '' },
+    { label: 'Melting Point', value: el.melt != null ? el.melt : '—', unit: el.melt != null ? '°C' : '' },
+    { label: 'Boiling Point', value: el.boil != null ? el.boil : '—', unit: el.boil != null ? '°C' : '' },
+    { label: 'Density',       value: el.density != null ? el.density : '—', unit: el.density != null ? 'g/cm³' : '' },
+    { label: 'Protons',       value: el.protons, unit: '' },
+    { label: 'Neutrons',      value: el.neutrons != null ? el.neutrons : '—', unit: '' },
+    { label: 'Electrons',     value: el.protons, unit: '' },
+  ];
+  document.getElementById('propGrid').innerHTML = props.map(p =>
+    `<div class="prop-card"><div class="prop-label">${p.label}</div><div class="prop-value">${p.value}<span class="prop-unit">${p.unit}</span></div></div>`
+  ).join('');
+
+  // Electron config
+  document.getElementById('electronConfig').textContent = el.electronConfig || '—';
+
+  // Shells
+  const shellNames = ['K','L','M','N','O','P','Q'];
+  const shells = el.shells || [el.protons];
+  document.getElementById('shellsDisplay').innerHTML = shells.map((count, i) => {
+    const dots = Array(Math.min(count, 8)).fill(0).map(() => `<div class="electron-dot"></div>`).join('');
+    return `<div class="shell-item"><div class="shell-name">${shellNames[i]||'?'}</div><div class="shell-electrons">${dots}</div><div class="shell-count">${count}</div></div>${i < shells.length-1 ? '<div class="shell-arrow">→</div>' : ''}`;
+  }).join('');
+
+  // Discovery
+  document.getElementById('discoveredBy').textContent = el.discoveredBy || 'Unknown';
+  const yr = el.discoveryYear;
+  document.getElementById('discoveryYear').textContent = yr < 0 ? `${Math.abs(yr)} BC` : yr ? yr.toString() : '—';
+
+  // Uses
+  const uses = el.uses ? el.uses.split(',').map(s=>s.trim()).filter(Boolean) : [];
+  document.getElementById('usesList').innerHTML = uses.map(u => `<div class="use-tag">${u}</div>`).join('');
+
+  // Fun facts
+  const facts = el.funFacts || [];
+  document.getElementById('funFacts').innerHTML = facts.map(f => `<div class="fact-item">${f}</div>`).join('');
+
+  // HUD
+  document.getElementById('protonCount').textContent  = el.protons != null ? el.protons : '—';
+  document.getElementById('neutronCount').textContent = el.neutrons != null ? el.neutrons : '—';
+  document.getElementById('massNumber').textContent   = (el.protons||0) + (el.neutrons||0);
+
+  // Init or rebuild 3D
+  if (threeRAF) { cancelAnimationFrame(threeRAF); threeRAF = null; }
+  document.getElementById('three-loader').style.display = 'flex';
+  setTimeout(() => {
+    buildAtomModel(el, color);
+    document.getElementById('three-loader').style.display = 'none';
+  }, 100);
+}
+
+// ══════════════════════════════════════════════════════
+//  THREE.JS
+// ══════════════════════════════════════════════════════
+let scene, camera, renderer, clock;
+let atomGroup, nucleusGroup;
+let orbitRings = [], electronMeshes = [], electronOrbits = [];
+let protonMeshes = [], neutronMeshes = [];
+let isNucleusMode = false;
+let isDragging = false, prevX = 0, prevY = 0;
+let rotX = 0, rotY = 0, tRotX = 0, tRotY = 0;
+let camZ = 14, tCamZ = 14;
+
+function initThree() {
+  if (scene) return;
+  const canvas = document.getElementById('three-canvas');
+  const container = document.getElementById('rightPanel');
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x080f1e);
+  scene.fog = new THREE.FogExp2(0x080f1e, 0.012);
+
+  camera = new THREE.PerspectiveCamera(55, container.clientWidth / container.clientHeight, 0.1, 200);
+  camera.position.z = camZ;
+
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  clock = new THREE.Clock();
+
+  scene.add(new THREE.AmbientLight(0x112244, 0.8));
+  const pl1 = new THREE.PointLight(0x00d4ff, 2, 50);
+  pl1.position.set(5,5,5); scene.add(pl1);
+  const pl2 = new THREE.PointLight(0x3b82f6, 1.5, 50);
+  pl2.position.set(-5,-5,5); scene.add(pl2);
+
+  // Stars
+  const sg = new THREE.BufferGeometry();
+  const sp = new Float32Array(1500*3);
+  for (let i=0; i<1500*3; i++) sp[i] = (Math.random()-.5)*200;
+  sg.setAttribute('position', new THREE.BufferAttribute(sp,3));
+  scene.add(new THREE.Points(sg, new THREE.PointsMaterial({color:0x8899bb,size:.12,transparent:true,opacity:.6})));
+
+  // Controls
+  const c = canvas;
+  c.addEventListener('mousedown', e => { isDragging=true; prevX=e.clientX; prevY=e.clientY; });
+  window.addEventListener('mouseup', () => isDragging=false);
+  window.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    tRotY += (e.clientX-prevX)*.008; tRotX += (e.clientY-prevY)*.008;
+    prevX=e.clientX; prevY=e.clientY;
+  });
+  c.addEventListener('wheel', e => {
+    e.preventDefault();
+    tCamZ = Math.max(2, Math.min(35, tCamZ + e.deltaY*.05));
+    updateZoomBar();
+  }, {passive:false});
+
+  // Touch
+  let lastTX=0,lastTY=0,lastTD=0;
+  c.addEventListener('touchstart', e => {
+    if (e.touches.length===1) { lastTX=e.touches[0].clientX; lastTY=e.touches[0].clientY; }
+    else if (e.touches.length===2) lastTD = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+  }, {passive:true});
+  c.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (e.touches.length===1) {
+      tRotY += (e.touches[0].clientX-lastTX)*.008;
+      tRotX += (e.touches[0].clientY-lastTY)*.008;
+      lastTX=e.touches[0].clientX; lastTY=e.touches[0].clientY;
+    } else if (e.touches.length===2) {
+      const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+      tCamZ = Math.max(2, Math.min(35, tCamZ-(d-lastTD)*.05));
+      lastTD=d; updateZoomBar();
+    }
+  }, {passive:false});
+
+  window.addEventListener('resize', () => {
+    const w = container.clientWidth, h = container.clientHeight;
+    camera.aspect = w/h; camera.updateProjectionMatrix();
+    renderer.setSize(w,h);
+  });
+}
+
+function buildAtomModel(el, color) {
+  if (!scene) initThree();
+  if (atomGroup) scene.remove(atomGroup);
+  orbitRings=[]; electronMeshes=[]; electronOrbits=[];
+  protonMeshes=[]; neutronMeshes=[];
+  isNucleusMode = false;
+  camZ = 14; tCamZ = 14;
+  rotX=0; rotY=0; tRotX=0; tRotY=0;
+  document.getElementById('nucleusModeLabel').classList.remove('visible');
+  updateZoomBar();
+
+  atomGroup = new THREE.Group();
+  nucleusGroup = new THREE.Group();
+
+  const shells = el.shells || [el.protons];
+  const pc = el.protons || el.number;
+  const nc = el.neutrons || 0;
+
+  // Nucleus
+  const nr = 0.35 + Math.min(Math.log(pc+1)*0.12, 0.6);
+  const nMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(nr,32,32),
+    new THREE.MeshStandardMaterial({color:new THREE.Color(color),emissive:new THREE.Color(color),emissiveIntensity:.7,roughness:.2,metalness:.4})
+  );
+  nucleusGroup.add(nMesh);
+  const halo = new THREE.Mesh(
+    new THREE.SphereGeometry(nr*1.8,32,32),
+    new THREE.MeshBasicMaterial({color:new THREE.Color(color),transparent:true,opacity:.06,side:THREE.BackSide})
+  );
+  nucleusGroup.add(halo);
+
+  // Protons/neutrons (hidden)
+  const total = Math.min(pc+nc, 60);
+  function fibPos(n,i) {
+    const phi = Math.acos(1-2*(i+.5)/n), theta = Math.PI*(1+Math.sqrt(5))*i;
+    const r = nr*.9 * Math.cbrt(Math.random()*.5+.5);
+    return {x:r*Math.sin(phi)*Math.cos(theta),y:r*Math.cos(phi),z:r*Math.sin(phi)*Math.sin(theta)};
+  }
+  const pg = new THREE.SphereGeometry(.12,12,12);
+  const pMat = new THREE.MeshStandardMaterial({color:0xff4757,emissive:0xff2244,emissiveIntensity:.8,roughness:.3});
+  const nMat2 = new THREE.MeshStandardMaterial({color:0x5599ff,emissive:0x2244cc,emissiveIntensity:.8,roughness:.3});
+  const dp = Math.min(pc,total), dn = Math.min(nc,total-dp);
+  for (let i=0; i<dp+dn; i++) {
+    const isp = i < dp, m = new THREE.Mesh(pg, isp?pMat:nMat2);
+    const p = fibPos(dp+dn,i); m.position.set(p.x,p.y,p.z); m.visible=false;
+    nucleusGroup.add(m);
+    (isp?protonMeshes:neutronMeshes).push(m);
+  }
+  atomGroup.add(nucleusGroup);
+
+  // Orbitals
+  shells.forEach((cnt, si) => {
+    const r = 2.2+si*2.0, tx=(si*37)%180, ty=(si*67)%180;
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(r,.018,8,100),
+      new THREE.MeshBasicMaterial({color:new THREE.Color(color),transparent:true,opacity:.25})
+    );
+    ring.rotation.x = THREE.MathUtils.degToRad(tx);
+    ring.rotation.y = THREE.MathUtils.degToRad(ty);
+    atomGroup.add(ring);
+    orbitRings.push(ring);
+
+    const ne = Math.min(cnt,16);
+    for (let e=0; e<ne; e++) {
+      const ang = (e/ne)*Math.PI*2;
+      const em = new THREE.Mesh(
+        new THREE.SphereGeometry(.12,12,12),
+        new THREE.MeshStandardMaterial({color:new THREE.Color(color),emissive:new THREE.Color(color),emissiveIntensity:1.2,roughness:0})
+      );
+      const eh = new THREE.Mesh(
+        new THREE.SphereGeometry(.22,8,8),
+        new THREE.MeshBasicMaterial({color:new THREE.Color(color),transparent:true,opacity:.3})
+      );
+      em.add(eh);
+      atomGroup.add(em);
+      electronMeshes.push(em);
+      electronOrbits.push({si,r,angle:ang,speed:.4/(si+1),tx:THREE.MathUtils.degToRad(tx),ty:THREE.MathUtils.degToRad(ty)});
+    }
+  });
+
+  scene.add(atomGroup);
+  if (!threeRAF) animate();
+}
+
+function updateZoomBar() {
+  const pct = 1-(tCamZ-2)/(35-2);
+  document.getElementById('zoomBar').style.width = (pct*100).toFixed(1)+'%';
+  const nMode = tCamZ < 4.5;
+  if (nMode !== isNucleusMode) {
+    isNucleusMode = nMode;
+    protonMeshes.forEach(m=>m.visible=nMode);
+    neutronMeshes.forEach(m=>m.visible=nMode);
+    orbitRings.forEach(r=>r.material.opacity=nMode?.05:.25);
+    electronMeshes.forEach(m=>m.visible=!nMode);
+    if (nucleusGroup) { nucleusGroup.children[0].visible=!nMode; nucleusGroup.children[1].visible=!nMode; }
+    document.getElementById('nucleusModeLabel').classList.toggle('visible', nMode);
+  }
+}
+
+function animate() {
+  threeRAF = requestAnimationFrame(animate);
+  const d = clock.getDelta(), t = clock.getElapsedTime();
+  camZ += (tCamZ-camZ)*.08; camera.position.z=camZ;
+  rotX += (tRotX-rotX)*.1; rotY += (tRotY-rotY)*.1;
+  if (atomGroup) {
+    atomGroup.rotation.x=rotX; atomGroup.rotation.y=rotY;
+    if (!isDragging) tRotY += d*.15;
+  }
+  if (nucleusGroup?.children[0]) {
+    const pulse = 1+Math.sin(t*3)*.04;
+    nucleusGroup.children[0].scale.setScalar(pulse);
+  }
+  electronOrbits.forEach((o,i) => {
+    o.angle += o.speed*d;
+    const x=o.r*Math.cos(o.angle), z=o.r*Math.sin(o.angle);
+    const sX=Math.sin(o.tx), cX=Math.cos(o.tx), sY=Math.sin(o.ty), cY=Math.cos(o.ty);
+    const y2=-z*sX, z2=z*cX, x3=x*cY+z2*sY, z3=-x*sY+z2*cY;
+    if (electronMeshes[i]) electronMeshes[i].position.set(x3,y2,z3);
+  });
+  if (isNucleusMode) {
+    protonMeshes.forEach((m,i)=>{m.position.x+=Math.sin(t*2+i)*.0008;m.position.y+=Math.cos(t*2.5+i)*.0008;});
+    neutronMeshes.forEach((m,i)=>{m.position.x+=Math.sin(t*1.8+i+1)*.0006;m.position.y+=Math.cos(t*2.2+i+1)*.0006;});
+  }
+  renderer.render(scene,camera);
+}
+
+// ══════════════════════════════════════════════════════
+//  COLOUR-BY VIEWS (heatmaps + state of matter @ temperature)
+// ══════════════════════════════════════════════════════
+const BY_NUM = new Map(ELEMENTS.map(e => [e.number, e]));
+const VIEWS = {
+  category: { label: 'Category' },
+  state:    { label: 'State' },
+  mass:     { label: 'Atomic mass',    unit: ' u',     get: e => e.mass },
+  melt:     { label: 'Melting point',  unit: ' °C',    get: e => e.melt },
+  boil:     { label: 'Boiling point',  unit: ' °C',    get: e => e.boil },
+  density:  { label: 'Density',        unit: ' g/cm³', get: e => e.density },
+  year:     { label: 'Discovered',     unit: '',       get: e => e.discoveryYear }
+};
+const HEAT_STOPS = ['#3b82f6', '#06b6d4', '#4ade80', '#ffd93d', '#ff6b6b'];
+const STATE_COLORS = { Solid: '#60a5fa', Liquid: '#34d399', Gas: '#fb923c', Unknown: '#475569' };
+let curView = 'category', curTemp = 298, heatTimer = null;
+
+function hex2rgb(h) { return [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); }
+function heatColor(t) {
+  const x = Math.min(1, Math.max(0, t)) * (HEAT_STOPS.length - 1);
+  const i = Math.min(HEAT_STOPS.length - 2, Math.floor(x)), f = x - i;
+  const a = hex2rgb(HEAT_STOPS[i]), b = hex2rgb(HEAT_STOPS[i + 1]);
+  return `rgb(${a.map((v, k) => Math.round(v + (b[k] - v) * f)).join(',')})`;
+}
+function fmtVal(key, v, compact) {
+  if (key === 'year') return v < 0 ? `${-v} BC` : String(v);
+  const unit = compact ? '' : VIEWS[key].unit;
+  if (v !== 0 && Math.abs(v) < 0.01) return v.toExponential(1) + unit;
+  return Number(v.toPrecision(compact ? 3 : 4)) + unit;
+}
+// Percentile ranking keeps outliers (e.g. Os density, Hg melting) from washing out the whole table.
+function rankMap(get) {
+  const list = ELEMENTS.filter(e => typeof get(e) === 'number').sort((a, b) => get(a) - get(b));
+  const m = new Map();
+  list.forEach((e, i) => m.set(e.number, list.length > 1 ? i / (list.length - 1) : 0));
+  return { m, lo: list[0], hi: list[list.length - 1] };
+}
+function stateAt(el, K) {
+  const c = K - 273.15;
+  if (el.melt != null && c < el.melt) return 'Solid';
+  if (el.boil != null && c >= el.boil) return 'Gas';
+  if (el.melt != null && el.boil != null) return 'Liquid';
+  return STATE_COLORS[el.state] ? el.state : 'Unknown';
+}
+function applyView() {
+  const v = VIEWS[curView];
+  const rk = v.get ? rankMap(v.get) : null;
+  document.querySelectorAll('.el-cell').forEach(cell => {
+    const el = BY_NUM.get(+cell.dataset.number);
+    let color = catColor(el.category), text = cell.dataset.massText, tip = '';
+    if (curView === 'state') {
+      const s = stateAt(el, curTemp);
+      color = STATE_COLORS[s]; text = s; tip = `State @ ${curTemp} K <span>${s}</span>`;
+    } else if (rk) {
+      if (rk.m.has(el.number)) { color = heatColor(rk.m.get(el.number)); text = fmtVal(curView, v.get(el), true); tip = `${v.label} <span>${fmtVal(curView, v.get(el))}</span>`; }
+      else { color = STATE_COLORS.Unknown; text = '—'; tip = `${v.label} <span>no data</span>`; }
+    }
+    cell.style.setProperty('--el-color', color);
+    cell.querySelector('.el-mass').textContent = text;
+    const t = cell.querySelector('.tt-view');
+    t.hidden = !tip; t.innerHTML = tip;
+  });
+  const hl = document.getElementById('heatLegend');
+  document.getElementById('catLegend').hidden = curView !== 'category';
+  hl.hidden = curView === 'category';
+  document.getElementById('tempWrap').hidden = curView !== 'state';
+  if (curView === 'state') {
+    hl.innerHTML = ['Solid', 'Liquid', 'Gas', 'Unknown'].map(s => `<span class="sw"><i style="background:${STATE_COLORS[s]}"></i>${s}</span>`).join('') +
+      '<span>at 1 atm · hover to inspect</span>';
+  } else if (rk) {
+    hl.innerHTML = `<span>${v.label}: <b>${fmtVal(curView, v.get(rk.lo))}</b> (${rk.lo.symbol})</span><div class="heat-bar"></div><span><b>${fmtVal(curView, v.get(rk.hi))}</b> (${rk.hi.symbol})</span><span>· colour = rank</span>`;
+  }
+}
+function setTemp(K) {
+  curTemp = K;
+  document.getElementById('tempSlider').value = K;
+  document.getElementById('tempVal').textContent = `${K} K · ${Math.round(K - 273.15)} °C`;
+  applyView();
+}
+function stopHeat() { if (heatTimer) { clearInterval(heatTimer); heatTimer = null; document.getElementById('heatBtn').textContent = '▶ Heat up'; } }
+function setView(view) {
+  if (!VIEWS[view]) return;
+  curView = view; stopHeat();
+  document.querySelectorAll('#viewBtns .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  applyView();
+}
+
+// ══════════════════════════════════════════════════════
+//  FACT TICKER
+// ══════════════════════════════════════════════════════
+const FACTS = [];
+ELEMENTS.forEach(e => (e.funFacts || []).forEach(f => FACTS.push({ e, f })));
+function showFact(instant) {
+  const t = document.getElementById('ticker');
+  const pick = FACTS[Math.floor(Math.random() * FACTS.length)];
+  const set = () => { t.dataset.n = pick.e.number; t.innerHTML = `💡 <b>${pick.e.name} (${pick.e.symbol})</b> — ${pick.f}`; t.classList.remove('fade'); };
+  if (instant) return set();
+  t.classList.add('fade'); setTimeout(set, 350);
+}
+
+// ══════════════════════════════════════════════════════
+//  QUIZ
+// ══════════════════════════════════════════════════════
+const quiz = { active: false, round: 0, total: 10, score: 0, streak: 0, correct: 0, cur: null, locked: false, used: new Set(), timer: null };
+function getBest() { try { return +localStorage.getItem('pt-best') || 0; } catch (e) { return 0; } }
+function setBest(v) { try { localStorage.setItem('pt-best', v); } catch (e) {} }
+function sameKey(el, k) { return ELEMENTS.filter(e => e[k] === el[k]).map(e => e.number); }
+function makeQuestion() {
+  let t, tries = 0;
+  do { t = ELEMENTS[Math.floor(Math.random() * ELEMENTS.length)]; } while (quiz.used.has(t.number) && ++tries < 40);
+  quiz.used.add(t.number);
+  const types = ['name', 'number', 'summary', 'discoverer', 'config', 'family'];
+  const type = types[Math.floor(Math.random() * types.length)];
+  const known = t.discoveredBy && !/unknown|ancient/i.test(t.discoveredBy);
+  if (type === 'number') return { html: `Which element has atomic number <b>${t.number}</b>?`, ok: [t.number] };
+  if (type === 'summary' && t.summary) {
+    const masked = t.summary.replace(new RegExp(t.name, 'gi'), '▇▇▇');
+    return { html: `Who am I? <i>“${masked}”</i>`, ok: [t.number] };
+  }
+  if (type === 'discoverer' && known) {
+    const ok = sameKey(t, 'discoveredBy');
+    return { html: `Click ${ok.length > 1 ? 'an' : 'the'} element discovered by <b>${t.discoveredBy}</b>`, ok };
+  }
+  if (type === 'config' && t.electronConfig) return { html: `Which element has the configuration <b>${t.electronConfig}</b>?`, ok: sameKey(t, 'electronConfig') };
+  if (type === 'family') {
+    const ok = ELEMENTS.filter(e => e.category === t.category && e.period === t.period).map(e => e.number);
+    return { html: `Click any <b>${CAT_NAMES[t.category]}</b> in period <b>${t.period}</b>`, ok };
+  }
+  return { html: `Find <b>${t.name}</b> on the table`, ok: [t.number] };
+}
+function quizHud() {
+  document.getElementById('qRound').textContent = Math.min(quiz.round, quiz.total);
+  document.getElementById('qTotal').textContent = quiz.total;
+  document.getElementById('qScore').textContent = quiz.score;
+  document.getElementById('qStreak').textContent = quiz.streak;
+}
+function clearMarks() { document.querySelectorAll('.q-right,.q-wrong').forEach(c => c.classList.remove('q-right', 'q-wrong')); }
+function nextQuestion() {
+  clearMarks();
+  if (quiz.round >= quiz.total) return endQuiz();
+  quiz.round++; quiz.locked = false; quiz.cur = makeQuestion();
+  const q = document.getElementById('quizQ'); q.className = 'quiz-q'; q.innerHTML = quiz.cur.html;
+  quizHud();
+}
+function startQuiz() {
+  stopHeat(); clearTimeout(quiz.timer);
+  Object.assign(quiz, { active: true, round: 0, score: 0, streak: 0, correct: 0, used: new Set() });
+  document.getElementById('quizEnd').classList.remove('show');
+  document.getElementById('searchInput').value = ''; applyFilter('all');
+  document.body.classList.add('quizzing');
+  nextQuestion();
+}
+function stopQuiz() {
+  quiz.active = false; clearTimeout(quiz.timer);
+  document.body.classList.remove('quizzing'); clearMarks();
+}
+function answerQuiz(el) {
+  if (quiz.locked) return;
+  quiz.locked = true;
+  const hit = quiz.cur.ok.includes(el.number), q = document.getElementById('quizQ');
+  const cellOf = n => document.querySelector(`.el-cell[data-number="${n}"]`);
+  if (hit) {
+    quiz.streak++; quiz.correct++; quiz.score += 10 + Math.min(quiz.streak - 1, 5) * 2;
+    cellOf(el.number).classList.add('q-right');
+    q.className = 'quiz-q ok'; q.innerHTML = `✓ Correct — <b>${el.name} (${el.symbol})</b>${quiz.streak > 2 ? ' · streak bonus!' : ''}`;
+  } else {
+    quiz.streak = 0;
+    cellOf(el.number).classList.add('q-wrong');
+    quiz.cur.ok.slice(0, 3).forEach(n => cellOf(n).classList.add('q-right'));
+    const a = BY_NUM.get(quiz.cur.ok[0]);
+    q.className = 'quiz-q bad'; q.innerHTML = `✗ Not quite — it was <b>${a.name} (${a.symbol})</b>${quiz.cur.ok.length > 1 ? ' (or similar)' : ''}`;
+  }
+  quizHud();
+  quiz.timer = setTimeout(nextQuestion, hit ? 1100 : 1900);
+}
+function confetti() {
+  const cols = ['#00d4ff', '#c084fc', '#ffd93d', '#4ade80', '#ff6b6b', '#fb923c'];
+  for (let i = 0; i < 70; i++) {
+    const c = document.createElement('div'); c.className = 'confetti';
+    c.style.cssText = `left:${Math.random() * 100}vw;background:${cols[i % 6]};animation-duration:${1.8 + Math.random() * 2}s;animation-delay:${Math.random() * .6}s`;
+    document.body.appendChild(c); setTimeout(() => c.remove(), 4500);
+  }
+}
+function endQuiz() {
+  const acc = Math.round(quiz.correct / quiz.total * 100), best = getBest(), isBest = quiz.score > best;
+  if (isBest) setBest(quiz.score);
+  const title = acc >= 90 ? '🏆 Nobel Laureate' : acc >= 70 ? '🧪 Lab Wizard' : acc >= 50 ? '⚗️ Apprentice Chemist' : '🔬 Curious Beginner';
+  document.getElementById('qeTitle').textContent = title;
+  document.getElementById('qeScore').textContent = quiz.score;
+  document.getElementById('qeLine').textContent = `${quiz.correct}/${quiz.total} correct · ${acc}% accuracy`;
+  document.getElementById('qeBest').textContent = isBest && quiz.score > 0 ? '🎉 New personal best!' : `Personal best: ${Math.max(best, quiz.score)}`;
+  document.getElementById('quizEnd').classList.add('show');
+  if (isBest && quiz.score > 0) confetti();
+  stopQuiz();
+}
+function onCellClick(el) {
+  if (quiz.active) return answerQuiz(el);
+  navigateTo(el.number);
+}
+function randomElement() { navigateTo(1 + Math.floor(Math.random() * 118)); }
+
+// ══════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════
+buildTable();
+
+document.getElementById('searchInput').addEventListener('input', applyHighlight);
+document.getElementById('filterBtns').addEventListener('click', e => {
+  const btn = e.target.closest('.filter-btn');
+  if (btn) applyFilter(btn.dataset.cat);
+});
+document.getElementById('backBtn').addEventListener('click', () => { window.location.hash = '#'; });
+document.getElementById('prevBtn').addEventListener('click', () => navigateTo(currentNumber-1));
+document.getElementById('nextBtn').addEventListener('click', () => navigateTo(currentNumber+1));
+
+document.getElementById('viewBtns').addEventListener('click', e => {
+  const b = e.target.closest('.filter-btn'); if (b) setView(b.dataset.view);
+});
+document.getElementById('tempSlider').addEventListener('input', e => { stopHeat(); setTemp(+e.target.value); });
+document.getElementById('heatBtn').addEventListener('click', () => {
+  if (heatTimer) return stopHeat();
+  document.getElementById('heatBtn').textContent = '⏸ Pause';
+  if (curTemp >= 6000) setTemp(0);
+  heatTimer = setInterval(() => { if (curTemp >= 6000) return stopHeat(); setTemp(Math.min(6000, curTemp + 20)); }, 40);
+});
+document.getElementById('randomBtn').addEventListener('click', randomElement);
+document.getElementById('quizBtn').addEventListener('click', () => quiz.active ? stopQuiz() : startQuiz());
+document.getElementById('quizQuit').addEventListener('click', stopQuiz);
+document.getElementById('qeAgain').addEventListener('click', startQuiz);
+document.getElementById('qeClose').addEventListener('click', () => document.getElementById('quizEnd').classList.remove('show'));
+document.getElementById('ticker').addEventListener('click', e => { const n = +e.currentTarget.dataset.n; if (n) navigateTo(n); });
+setInterval(() => { if (document.getElementById('page-table').classList.contains('active') && !document.hidden) showFact(); }, 8000);
+showFact(true);
+
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
+  const onTable = document.getElementById('page-table').classList.contains('active');
+  if (e.key === 'Escape') {
+    if (document.getElementById('quizEnd').classList.contains('show')) return document.getElementById('quizEnd').classList.remove('show');
+    if (typing) { document.activeElement.blur(); return; }
+    if (quiz.active) return stopQuiz();
+    if (!onTable) window.location.hash = '#';
+    return;
+  }
+  if (typing) return;
+  if (onTable) {
+    if (e.key === '/') { e.preventDefault(); document.getElementById('searchInput').focus(); }
+    else if (e.key === 'r' || e.key === 'R') randomElement();
+    else if (e.key === 'q' || e.key === 'Q') quiz.active ? stopQuiz() : startQuiz();
+  } else {
+    if (e.key === 'ArrowLeft') navigateTo(currentNumber - 1);
+    else if (e.key === 'ArrowRight') navigateTo(currentNumber + 1);
+    else if (e.key === 'r' || e.key === 'R') randomElement();
+  }
+});
+
+// Shareable views: ?view=melt  or  ?view=state&temp=1500
+(function () {
+  const q = new URLSearchParams(location.search);
+  if (q.get('temp') && +q.get('temp') >= 0) setTemp(Math.min(6000, +q.get('temp')));
+  if (q.get('view')) setView(q.get('view'));
+})();
+
+handleHash();
+</script>
+</body>
+</html>

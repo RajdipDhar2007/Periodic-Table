@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 276" width="980" height="276" role="img" aria-label="The ten element categories, colour coded">
+<title>The ten element categories, colour coded</title>
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#030712"/><stop offset=".55" stop-color="#0a1628"/><stop offset="1" stop-color="#0f1f3d"/></linearGradient>
+<radialGradient id="vig" cx=".5" cy=".5" r=".62"><stop offset="0" stop-color="#030712" stop-opacity=".94"/><stop offset=".55" stop-color="#030712" stop-opacity=".72"/><stop offset="1" stop-color="#030712" stop-opacity="0"/></radialGradient>
+<radialGradient id="nuc"><stop offset="0" stop-color="#00d4ff" stop-opacity=".9"/><stop offset="1" stop-color="#00d4ff" stop-opacity="0"/></radialGradient>
+<linearGradient id="title" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox" spreadMethod="reflect">
+<stop offset="0" stop-color="#00d4ff"/><stop offset=".35" stop-color="#818cf8"/><stop offset=".65" stop-color="#c084fc"/><stop offset="1" stop-color="#4ade80"/>
+<animateTransform attributeName="gradientTransform" type="translate" values="-.6 0;.6 0;-.6 0" dur="8s" repeatCount="indefinite"/></linearGradient>
+<filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs><style>.chip{animation:p 4.5s ease-in-out infinite}@keyframes p{0%,100%{opacity:.62}50%{opacity:1}}</style>
+<rect width="980" height="276" rx="18" fill="url(#bg)"/>
+<g transform="translate(20 20)" class="chip" style="animation-delay:-0.00s">
+<rect width="172" height="108" rx="12" fill="#ff6b6b" fill-opacity=".1" stroke="#ff6b6b" stroke-width="1.8"/>
+<text x="86" y="62" text-anchor="middle" font-family="'Exo 2','Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="46" font-weight="900" fill="#ff6b6b">Li</text>
+<text x="86" y="92" text-anchor="middle" font-family="'Space Mono','SFMono-Regular',Consolas,'Courier New',monospace" font-size="12" letter-spacing="1" fill="#cbd5e1">Alkali Metal</text></g><g transform="translate(212 20)" class="chip" style="animation-delay:-0.45s">
+<rect width="172" height="108" rx="12" fill="#ffa07a" fill-opacity=".1" stroke="#ffa07a" stroke-width="1.8"/>
+<text x="86" y="62" text-anchor="middle" font-family="'Exo 2','Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="46" font-weight="900" fill="#ffa07a">Mg</text>
+<text x="86" y="92" text-anchor="middle" font-family="'Space Mono','SFMono-Regular',Consolas,'Courier New',monospace" font-size="12" letter-spacing="1" fill="#cbd5e1">Alkaline Earth</text></g><g transform="translate(404 20)" class="chip" style="animation-delay:-0.90s">
+<rect width="172" height="108" rx="12" fill="#4ade80" fill-opacity=".1" stroke="#4ade80" stroke-width="1.8"/>
+<text x="86" y="62" text-anchor="middle" font-family="'Exo 2','Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="46" font-weight="900" fill="#4ade80">Fe</text>
+<text x="86" y="92" text-anchor="middle" font-family="'Space Mono','SFMono-Regular',Consolas,'Courier New',monospace" font-size="12" letter-spacing="1" fill="#cbd5e1">Transition Metal</text></g><g transform="translate(596 20)" class="chip" style="animation-delay:-1.35s">
+<rect width="172" height="108" rx="12" fill="#06b6d4" fill-opacity=".1" stroke="#06b6d4" stroke-width="1.8"/>
+<text x="86" y="62" text-anchor="middle" font-family="'Exo 2','Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="46" font-weight="900" fill="#06b6d4">Al</text>
+<text x="86" y="92" text-anchor="middle" font-family="'Space Mono','SFMono-Regular',Consolas,'Courier New',monospace" font-size="12" letter-spacing="1" fill="#cbd5e1">Post-Transition</text></g><g transform="translate(788 20)" class="chip" style="animation-delay:-1.80s">
+<rect width="172" height="108" rx="12" fill="#f59e0b" fill-opacity=".1" stroke="#f59e0b" stroke-width="1.8"/>
+<text x="86" y="62" text-anchor="middle" font-family="'Exo 2','Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="46" font-weight="900" fill="#f59e0b">Si</text>
+<text x="86" y="92" text-anchor="middle" font-family="'Space Mono','SFMono-Regular',Consolas,'Courier New',monospace" font-size="12" letter-spacing="1" fill="#cbd5e1">Metalloid</text></g><g transform="translate(20 148)" class="chip" style="animation-delay:-2.25s">
+<rect width="172" height="108" rx="12" fill="#34d399" fill-opacity=".1" stroke="#34d399" stroke-width="1.8"/>
+<text x="86" y="62" text-anchor="middle" font-family="'Exo 2','Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="46" font-weight="900" fill="#34d399">C</text>
+<text x="86" y="92" text-anchor="middle" font-family="'Space Mono','SFMono-Regular',Consolas,'Courier New',monospace" font-size="12" letter-spacing="1" fill="#cbd5e1">Nonmetal</text></g><g transform="translate(212 148)" class="chip" style="animation-delay:-2.70s">
+<rect width="172" height="108" rx="12" fill="#fb923c" fill-opacity=".1" stroke="#fb923c" stroke-width="1.8"/>
+<text x="86" y="62" text-anchor="middle" font-family="'Exo 2','Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="46" font-weight="900" fill="#fb923c">Cl</text>
+<text x="86" y="92" text-anchor="middle" font-family="'Space Mono','SFMono-Regular',Consolas,'Courier New',monospace" font-size="12" letter-spacing="1" fill="#cbd5e1">Halogen</text></g><g transform="translate(404 148)" class="chip" style="animation-delay:-3.15s">
+<rect width="172" height="108" rx="12" fill="#818cf8" fill-opacity=".1" stroke="#818cf8" stroke-width="1.8"/>
+<text x="86" y="62" text-anchor="middle" font-family="'Exo 2','Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="46" font-weight="900" fill="#818cf8">Ar</text>
+<text x="86" y="92" text-anchor="middle" font-family="'Space Mono','SFMono-Regular',Consolas,'Courier New',monospace" font-size="12" letter-spacing="1" fill="#cbd5e1">Noble Gas</text></g><g transform="translate(596 148)" class="chip" style="animation-delay:-3.60s">
+<rect width="172" height="108" rx="12" fill="#ffd93d" fill-opacity=".1" stroke="#ffd93d" stroke-width="1.8"/>
+<text x="86" y="62" text-anchor="middle" font-family="'Exo 2','Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="46" font-weight="900" fill="#ffd93d">La</text>
+<text x="86" y="92" text-anchor="middle" font-family="'Space Mono','SFMono-Regular',Consolas,'Courier New',monospace" font-size="12" letter-spacing="1" fill="#cbd5e1">Lanthanide</text></g><g transform="translate(788 148)" class="chip" style="animation-delay:-4.05s">
+<rect width="172" height="108" rx="12" fill="#c084fc" fill-opacity=".1" stroke="#c084fc" stroke-width="1.8"/>
+<text x="86" y="62" text-anchor="middle" font-family="'Exo 2','Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="46" font-weight="900" fill="#c084fc">U</text>
+<text x="86" y="92" text-anchor="middle" font-family="'Space Mono','SFMono-Regular',Consolas,'Courier New',monospace" font-size="12" letter-spacing="1" fill="#cbd5e1">Actinide</text></g>
+</svg>
